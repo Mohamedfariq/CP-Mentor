@@ -1,0 +1,70 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  min-height: max(884px, 100dvh);
+  font-family: "Inter", sans-serif;
+  background-color: #111821;
+}
+
+.material-symbols-outlined {
+  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+}
+
+.filled-icon {
+  font-variation-settings: "FILL" 1;
+}
+
+.glass-card {
+  background: rgba(30, 41, 59, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.contest-glass-card {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.status-solved {
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.1);
+}
+
+.status-attempted {
+  color: #facc15;
+  background: rgba(250, 204, 21, 0.1);
+}
+
+.status-none {
+  color: #94a3b8;
+  background: rgba(148, 163, 184, 0.1);
+}
+
+.active-dot {
+  box-shadow: 0 0 8px #256af4;
+}
+
+.bg-glow-blue {
+  background: radial-gradient(circle at 50% 50%, rgba(37, 106, 244, 0.15) 0%, transparent 70%);
+}
+
+.bg-glow-purple {
+  background: radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.1) 0%, transparent 70%);
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 10px;
+}
