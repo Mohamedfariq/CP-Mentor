@@ -29,6 +29,46 @@ const verdictStyles = {
 };
 
 function SignUpPage({ onGoToLogin, onAuthSuccess }) {
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [codeforcesId, setCodeforcesId] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const handleSignUp = async (e) => {
+    e.preventDefault();
+    setErrorMessage("");
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch("/api/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, email, password, codeforcesId }),
+      });
+
+      let data = null;
+      const contentType = response.headers.get("content-type") || "";
+      if (contentType.includes("application/json")) {
+        data = await response.json();
+      }
+
+      if (!response.ok) {
+        setErrorMessage(
+          data?.message || data?.detail || `Unable to sign up (HTTP ${response.status}). Check backend server logs.`
+        );
+        return;
+      }
+
+      onAuthSuccess();
+    } catch {
+      setErrorMessage("Cannot reach backend API. Start FastAPI with `python -m uvicorn api.main:app --reload --port 5000`.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div
       className="bg-background-light dark:bg-background-dark flex flex-col items-center justify-center p-4 relative overflow-hidden"
@@ -50,11 +90,25 @@ function SignUpPage({ onGoToLogin, onAuthSuccess }) {
           <h2 className="text-white text-xl font-semibold mb-6">Create Your Account</h2>
           <form
             className="space-y-5"
-            onSubmit={(e) => {
-              e.preventDefault();
-              onAuthSuccess();
-            }}
+            onSubmit={handleSignUp}
           >
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-300 block">Username</label>
+              <div className="relative">
+                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xl">
+                  person
+                </span>
+                <input
+                  className="w-full bg-slate-900/50 border border-slate-700 rounded-lg py-3 pl-11 pr-4 text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                  placeholder="your_username"
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-300 block">Email Address</label>
               <div className="relative">
@@ -65,6 +119,9 @@ function SignUpPage({ onGoToLogin, onAuthSuccess }) {
                   className="w-full bg-slate-900/50 border border-slate-700 rounded-lg py-3 pl-11 pr-4 text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
                   placeholder="dev@example.com"
                   type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
                 />
               </div>
             </div>
@@ -79,6 +136,9 @@ function SignUpPage({ onGoToLogin, onAuthSuccess }) {
                   className="w-full bg-slate-900/50 border border-slate-700 rounded-lg py-3 pl-11 pr-11 text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
                   placeholder="••••••••"
                   type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
                 />
                 <button
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
@@ -99,6 +159,9 @@ function SignUpPage({ onGoToLogin, onAuthSuccess }) {
                   className="w-full bg-slate-900/50 border border-slate-700 rounded-lg py-3 pl-11 pr-4 text-white placeholder:text-slate-600 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
                   placeholder="tourist"
                   type="text"
+                  value={codeforcesId}
+                  onChange={(e) => setCodeforcesId(e.target.value)}
+                  required
                 />
               </div>
               <p className="text-[11px] text-primary/80 flex items-center gap-1 mt-1">
@@ -107,11 +170,14 @@ function SignUpPage({ onGoToLogin, onAuthSuccess }) {
               </p>
             </div>
 
+            {errorMessage ? <p className="text-red-400 text-sm">{errorMessage}</p> : null}
+
             <button
-              className="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-3.5 rounded-lg shadow-[0_0_20px_rgba(37,106,244,0.3)] transition-all active:scale-[0.98] mt-4 flex items-center justify-center gap-2"
+              className="w-full bg-primary hover:bg-primary/90 disabled:opacity-70 text-white font-semibold py-3.5 rounded-lg shadow-[0_0_20px_rgba(37,106,244,0.3)] transition-all active:scale-[0.98] mt-4 flex items-center justify-center gap-2"
               type="submit"
+              disabled={isSubmitting}
             >
-              <span>Sign Up</span>
+              <span>{isSubmitting ? "Signing Up..." : "Sign Up"}</span>
               <span className="material-symbols-outlined text-xl">arrow_forward</span>
             </button>
           </form>
@@ -148,6 +214,42 @@ function SignUpPage({ onGoToLogin, onAuthSuccess }) {
 }
 
 function LoginPage({ onGoToSignup, onAuthSuccess }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setErrorMessage("");
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      let data = null;
+      const contentType = response.headers.get("content-type") || "";
+      if (contentType.includes("application/json")) {
+        data = await response.json();
+      }
+
+      if (!response.ok) {
+        setErrorMessage(data?.message || data?.detail || "Invalid email or password");
+        return;
+      }
+
+      onAuthSuccess();
+    } catch {
+      setErrorMessage("Cannot reach backend API. Start FastAPI with `python -m uvicorn api.main:app --reload --port 5000`.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div
       className="bg-background-light dark:bg-background-dark flex items-center justify-center p-4 selection:bg-primary/30 relative overflow-hidden"
@@ -174,10 +276,7 @@ function LoginPage({ onGoToSignup, onAuthSuccess }) {
 
           <form
             className="space-y-5"
-            onSubmit={(e) => {
-              e.preventDefault();
-              onAuthSuccess();
-            }}
+            onSubmit={handleLogin}
           >
             <div className="space-y-2">
               <label className="text-slate-300 text-sm font-medium ml-1">Email Address</label>
@@ -189,6 +288,9 @@ function LoginPage({ onGoToSignup, onAuthSuccess }) {
                   className="w-full bg-slate-900/50 border border-slate-700 text-white text-sm rounded-xl py-3.5 pl-11 pr-4 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-slate-600"
                   placeholder="name@example.com"
                   type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
                 />
               </div>
             </div>
@@ -208,6 +310,9 @@ function LoginPage({ onGoToSignup, onAuthSuccess }) {
                   className="w-full bg-slate-900/50 border border-slate-700 text-white text-sm rounded-xl py-3.5 pl-11 pr-11 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-slate-600"
                   placeholder="••••••••"
                   type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
                 />
                 <button
                   className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-500 hover:text-slate-300 transition-colors"
@@ -218,11 +323,14 @@ function LoginPage({ onGoToSignup, onAuthSuccess }) {
               </div>
             </div>
 
+            {errorMessage ? <p className="text-red-400 text-sm">{errorMessage}</p> : null}
+
             <button
-              className="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-3.5 rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-[0.98] mt-2"
+              className="w-full bg-primary hover:bg-primary/90 disabled:opacity-70 text-white font-semibold py-3.5 rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-[0.98] mt-2"
               type="submit"
+              disabled={isSubmitting}
             >
-              Log In
+              {isSubmitting ? "Logging In..." : "Log In"}
             </button>
           </form>
 
