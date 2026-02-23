@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const topicAccuracy = [
   { topic: "Dynamic Programming", value: 85 },
@@ -26,6 +26,26 @@ const verdictStyles = {
   green: "bg-green-500/10 text-green-500",
   red: "bg-red-500/10 text-red-500",
   yellow: "bg-yellow-500/10 text-yellow-500",
+};
+
+const formatTopicLabel = (topic) =>
+  topic
+    .split(" ")
+    .map((word) => (word ? word[0].toUpperCase() + word.slice(1) : word))
+    .join(" ");
+
+const difficultyFromRating = (rating) => {
+  const value = Number(rating);
+  if (!Number.isFinite(value) || value <= 0) {
+    return { label: "Unrated", cls: "bg-slate-500/10 text-slate-300 border border-slate-500/20" };
+  }
+  if (value < 1200) {
+    return { label: "Easy", cls: "bg-accent-emerald/10 text-accent-emerald border border-accent-emerald/20" };
+  }
+  if (value < 1700) {
+    return { label: "Medium", cls: "bg-accent-amber/10 text-accent-amber border border-accent-amber/20" };
+  }
+  return { label: "Hard", cls: "bg-accent-rose/10 text-accent-rose border border-accent-rose/20" };
 };
 
 function SignUpPage({ onGoToLogin, onAuthSuccess }) {
@@ -61,7 +81,7 @@ function SignUpPage({ onGoToLogin, onAuthSuccess }) {
         return;
       }
 
-      onAuthSuccess();
+      onAuthSuccess(data?.user ?? null);
     } catch {
       setErrorMessage("Cannot reach backend API. Start FastAPI with `python -m uvicorn api.main:app --reload --port 5000`.");
     } finally {
@@ -134,7 +154,7 @@ function SignUpPage({ onGoToLogin, onAuthSuccess }) {
                 </span>
                 <input
                   className="w-full bg-slate-900/50 border border-slate-700 rounded-lg py-3 pl-11 pr-11 text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
-                  placeholder="••••••••"
+                  placeholder="********"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -242,7 +262,7 @@ function LoginPage({ onGoToSignup, onAuthSuccess }) {
         return;
       }
 
-      onAuthSuccess();
+      onAuthSuccess(data?.user ?? null);
     } catch {
       setErrorMessage("Cannot reach backend API. Start FastAPI with `python -m uvicorn api.main:app --reload --port 5000`.");
     } finally {
@@ -308,7 +328,7 @@ function LoginPage({ onGoToSignup, onAuthSuccess }) {
                 </div>
                 <input
                   className="w-full bg-slate-900/50 border border-slate-700 text-white text-sm rounded-xl py-3.5 pl-11 pr-11 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-slate-600"
-                  placeholder="••••••••"
+                  placeholder="********"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -374,7 +394,99 @@ function LoginPage({ onGoToSignup, onAuthSuccess }) {
   );
 }
 
-function DashboardPage({ onOpenPersonalizedSheet, onOpenPersonalizedContest, onOpenUpcoming }) {
+function DashboardPage({
+  onOpenPersonalizedSheet,
+  onOpenPersonalizedContest,
+  onOpenUpcoming,
+  authUser,
+  cachedDashboard,
+  onDashboardData,
+}) {
+  const [dashboardData, setDashboardData] = useState(null);
+  const [dashboardLoading, setDashboardLoading] = useState(false);
+  const [dashboardError, setDashboardError] = useState("");
+  const activeDashboardRequestRef = useRef(null);
+
+  const fetchDashboard = useCallback(async ({ silent = false } = {}) => {
+    const codeforcesId = authUser?.codeforces_id;
+    if (!codeforcesId) return;
+
+    if (activeDashboardRequestRef.current) {
+      activeDashboardRequestRef.current.abort();
+    }
+    const controller = new AbortController();
+    activeDashboardRequestRef.current = controller;
+
+    setDashboardLoading(!silent);
+    if (!silent) {
+      setDashboardError("");
+    }
+    try {
+      const response = await fetch("/api/dashboard", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ codeforcesId }),
+        signal: controller.signal,
+      });
+
+      const contentType = response.headers.get("content-type") || "";
+      const data = contentType.includes("application/json") ? await response.json() : null;
+      if (!response.ok) {
+        throw new Error(data?.detail || `Unable to load dashboard (HTTP ${response.status})`);
+      }
+      setDashboardData(data);
+      onDashboardData?.(data);
+      setDashboardError("");
+    } catch (err) {
+      if (err?.name === "AbortError") {
+        return;
+      }
+      if (!silent) {
+        setDashboardError(err?.message || "Failed to load dashboard");
+      }
+    } finally {
+      if (!controller.signal.aborted) {
+        setDashboardLoading(false);
+      }
+    }
+  }, [authUser?.codeforces_id, onDashboardData]);
+
+  useEffect(() => {
+    if (cachedDashboard && cachedDashboard.codeforces_id === authUser?.codeforces_id) {
+      setDashboardData(cachedDashboard);
+      setDashboardError("");
+      return;
+    }
+    fetchDashboard({ silent: false });
+  }, [authUser?.codeforces_id, cachedDashboard, fetchDashboard]);
+
+  useEffect(() => {
+    return () => {
+      if (activeDashboardRequestRef.current) {
+        activeDashboardRequestRef.current.abort();
+      }
+    };
+  }, []);
+
+  const topicAccuracyRows =
+    dashboardData?.topic_accuracy && dashboardData.topic_accuracy.length > 0
+      ? dashboardData.topic_accuracy
+      : topicAccuracy;
+  const recentSubmissionRows =
+    dashboardData?.recent_submissions && dashboardData.recent_submissions.length > 0
+      ? dashboardData.recent_submissions
+      : recentSubmissions;
+  const ratingDelta = Number(dashboardData?.rating_delta || 0);
+  const ratingDeltaLabel = `${ratingDelta >= 0 ? "+" : ""}${ratingDelta}`;
+  const lastSyncedLabel = dashboardData?.last_synced
+    ? new Date(dashboardData.last_synced * 1000).toLocaleString()
+    : "Not synced";
+
+  const openSubmissionPopup = (url) => {
+    if (!url) return;
+    window.open(url, "cf-submission-view", "width=1200,height=800,menubar=no,toolbar=no,location=yes");
+  };
+
   return (
     <div className="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen pb-24 md:pb-0 md:pl-64">
       <aside className="fixed left-0 top-0 hidden h-full w-64 flex-col border-r border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-card-dark md:flex">
@@ -433,8 +545,8 @@ function DashboardPage({ onOpenPersonalizedSheet, onOpenPersonalizedContest, onO
               }}
             ></div>
             <div>
-              <p className="text-sm font-bold">tourist_fan</p>
-              <p className="text-xs text-slate-500">Expert</p>
+              <p className="text-sm font-bold">{dashboardData?.username || authUser?.username || "user"}</p>
+              <p className="text-xs text-slate-500">{dashboardData?.rank || "unrated"}</p>
             </div>
           </div>
         </div>
@@ -447,7 +559,12 @@ function DashboardPage({ onOpenPersonalizedSheet, onOpenPersonalizedContest, onO
           </div>
           <span className="font-bold">CP Tracker</span>
         </div>
-        <button className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
+        <button
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 disabled:opacity-60"
+          disabled={dashboardLoading || !authUser?.codeforces_id}
+          onClick={fetchDashboard}
+          type="button"
+        >
           <span className="material-symbols-outlined">sync</span>
         </button>
       </header>
@@ -456,15 +573,30 @@ function DashboardPage({ onOpenPersonalizedSheet, onOpenPersonalizedContest, onO
         <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div>
             <h2 className="text-2xl font-bold md:text-3xl">
-              Welcome back, <span className="text-accent-purple">tourist_fan</span>
+              Welcome back,{" "}
+              <span className="text-accent-purple">
+                {dashboardData?.username || authUser?.username || "coder"}
+              </span>
             </h2>
-            <p className="mt-1 text-slate-500 dark:text-slate-400">Last synced: 2 minutes ago</p>
+            <p className="mt-1 text-slate-500 dark:text-slate-400">Last synced: {lastSyncedLabel}</p>
           </div>
-          <button className="hidden items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white transition-opacity hover:opacity-90 md:flex">
+          <button
+            className="hidden items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-70 md:flex"
+            disabled={dashboardLoading || !authUser?.codeforces_id}
+            onClick={fetchDashboard}
+            type="button"
+          >
             <span className="material-symbols-outlined text-sm">sync</span>
-            Sync Profile
+            {dashboardLoading ? "Syncing..." : "Sync Profile"}
           </button>
         </div>
+
+        {dashboardLoading ? (
+          <p className="mb-6 text-sm text-slate-500 dark:text-slate-400">
+            Loading dashboard data from Codeforces...
+          </p>
+        ) : null}
+        {dashboardError ? <p className="mb-6 text-sm text-red-500">{dashboardError}</p> : null}
 
         <section className="mb-10">
           <div className="mb-4 flex items-center gap-2">
@@ -475,27 +607,32 @@ function DashboardPage({ onOpenPersonalizedSheet, onOpenPersonalizedContest, onO
             <div className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-card-dark">
               <span className="text-sm font-medium text-slate-500 dark:text-slate-400">Current Rating</span>
               <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-bold text-accent-purple">1924</span>
-                <span className="text-xs font-semibold text-green-500">+42</span>
+                <span className="text-3xl font-bold text-accent-purple">{dashboardData?.current_rating ?? 0}</span>
+                <span className={`text-xs font-semibold ${ratingDelta >= 0 ? "text-green-500" : "text-red-500"}`}>
+                  {ratingDeltaLabel}
+                </span>
               </div>
               <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                <div className="h-full bg-accent-purple" style={{ width: "72%" }}></div>
+                <div
+                  className="h-full bg-accent-purple"
+                  style={{ width: `${Math.min(Math.max(((dashboardData?.current_rating ?? 0) / 3500) * 100, 0), 100)}%` }}
+                ></div>
               </div>
             </div>
             <div className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-card-dark">
               <span className="text-sm font-medium text-slate-500 dark:text-slate-400">Max Rating</span>
-              <span className="text-3xl font-bold">2150</span>
-              <span className="text-xs text-slate-400">Master peak</span>
+              <span className="text-3xl font-bold">{dashboardData?.max_rating ?? 0}</span>
+              <span className="text-xs text-slate-400">{dashboardData?.max_rank || "unrated"} peak</span>
             </div>
             <div className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-card-dark">
-              <span className="text-sm font-medium text-slate-500 dark:text-slate-400">Global Rank</span>
-              <span className="text-3xl font-bold text-primary">#1,402</span>
-              <span className="text-xs text-slate-400">Top 2.5%</span>
+              <span className="text-sm font-medium text-slate-500 dark:text-slate-400">Friends Count</span>
+              <span className="text-3xl font-bold text-primary">{dashboardData?.friend_of_count ?? 0}</span>
+              <span className="text-xs text-slate-400">Contribution: {dashboardData?.contribution ?? 0}</span>
             </div>
             <div className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-card-dark">
               <span className="text-sm font-medium text-slate-500 dark:text-slate-400">Problems Solved</span>
-              <span className="text-3xl font-bold">1,240</span>
-              <span className="text-xs text-slate-400">Across 8 platforms</span>
+              <span className="text-3xl font-bold">{dashboardData?.problems_solved ?? 0}</span>
+              <span className="text-xs text-slate-400">Codeforces accepted problems</span>
             </div>
           </div>
         </section>
@@ -507,7 +644,7 @@ function DashboardPage({ onOpenPersonalizedSheet, onOpenPersonalizedContest, onO
               <h3 className="text-lg font-bold">Topic Accuracy</h3>
             </div>
             <div className="flex flex-col gap-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-card-dark">
-              {topicAccuracy.map((row) => (
+              {topicAccuracyRows.map((row) => (
                 <div className="space-y-2" key={row.topic}>
                   <div className="flex justify-between text-sm">
                     <span className="font-medium">{row.topic}</span>
@@ -526,6 +663,17 @@ function DashboardPage({ onOpenPersonalizedSheet, onOpenPersonalizedContest, onO
               <span className="material-symbols-outlined text-primary">history</span>
               <h3 className="text-lg font-bold">Recent Submissions</h3>
             </div>
+            <div className="mb-3 flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm dark:border-amber-900/50 dark:bg-amber-900/20">
+              <span className="text-amber-700 dark:text-amber-300">Login to Codeforces to view submissions</span>
+              <a
+                className="rounded-md bg-amber-600 px-3 py-1 text-xs font-semibold text-white hover:bg-amber-500"
+                href="https://codeforces.com/enter"
+                rel="noreferrer"
+                target="_blank"
+              >
+                Login to Codeforces
+              </a>
+            </div>
             <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-card-dark">
               <div className="overflow-x-auto custom-scrollbar">
                 <table className="w-full text-left text-sm">
@@ -534,11 +682,12 @@ function DashboardPage({ onOpenPersonalizedSheet, onOpenPersonalizedContest, onO
                       <th className="px-4 py-3 font-semibold">Problem Name</th>
                       <th className="px-4 py-3 font-semibold">Topic</th>
                       <th className="px-4 py-3 font-semibold">Verdict</th>
+                      <th className="px-4 py-3 font-semibold text-center">View</th>
                       <th className="px-4 py-3 font-semibold text-right">Time</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                    {recentSubmissions.map((row) => (
+                    {recentSubmissionRows.map((row) => (
                       <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/30" key={`${row.name}-${row.time}`}>
                         <td className="px-4 py-4 font-medium">{row.name}</td>
                         <td className="px-4 py-4 text-slate-500 dark:text-slate-400">{row.topic}</td>
@@ -548,6 +697,16 @@ function DashboardPage({ onOpenPersonalizedSheet, onOpenPersonalizedContest, onO
                           >
                             {row.verdict}
                           </span>
+                        </td>
+                        <td className="px-4 py-4 text-center">
+                          <button
+                            className="rounded-md border border-slate-300 px-2 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 disabled:opacity-50"
+                            disabled={!row.view_url}
+                            onClick={() => openSubmissionPopup(row.view_url)}
+                            type="button"
+                          >
+                            View
+                          </button>
                         </td>
                         <td className="px-4 py-4 text-right text-slate-500">{row.time}</td>
                       </tr>
@@ -594,7 +753,154 @@ function DashboardPage({ onOpenPersonalizedSheet, onOpenPersonalizedContest, onO
   );
 }
 
-function PersonalizedSheetPage({ onGoDashboard, onOpenPersonalizedContest, onOpenUpcoming }) {
+function PersonalizedSheetPage({
+  onGoDashboard,
+  onOpenPersonalizedContest,
+  onOpenUpcoming,
+  authUser,
+  cachedSheet,
+  onSheetData,
+}) {
+  const [sheetData, setSheetData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [sheetError, setSheetError] = useState("");
+  const [expandedTopics, setExpandedTopics] = useState({});
+
+  const fetchSheet = async (forceRefresh = false) => {
+    const codeforcesId = authUser?.codeforces_id;
+    if (!codeforcesId) return;
+
+    setLoading(true);
+    setSheetError("");
+    try {
+      const response = await fetch("/api/recommendations/weak-topics", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ codeforcesId, perTopic: 5, forceRefresh }),
+      });
+
+      const contentType = response.headers.get("content-type") || "";
+      const data = contentType.includes("application/json") ? await response.json() : null;
+      if (!response.ok) {
+        throw new Error(data?.detail || `Unable to generate sheet (HTTP ${response.status})`);
+      }
+
+      setSheetData(data);
+      onSheetData?.(data);
+    } catch (err) {
+      setSheetError(err?.message || "Failed to load personalized sheet");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (cachedSheet && cachedSheet.codeforces_id === authUser?.codeforces_id) {
+      setSheetData(cachedSheet);
+      return;
+    }
+    fetchSheet(false);
+  }, [authUser?.codeforces_id, cachedSheet]);
+
+  const topics = sheetData?.recommendations || [];
+  const totalProblems = topics.reduce((sum, topic) => sum + (topic.problems?.length || 0), 0);
+
+  useEffect(() => {
+    if (topics.length === 0) return;
+    setExpandedTopics((prev) => {
+      if (Object.keys(prev).length > 0) return prev;
+      return { [topics[0].topic]: true };
+    });
+  }, [topics]);
+
+  const exportSheetAsPdf = () => {
+    if (!sheetData || topics.length === 0) return;
+
+    const escapeHtml = (value) =>
+      String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+
+    const topicSections = topics
+      .map((topic) => {
+        const problemRows = (topic.problems || [])
+          .map(
+            (problem) => `
+              <tr>
+                <td>${escapeHtml(problem.problem_name)}</td>
+                <td>${escapeHtml(problem.problem_key)}</td>
+                <td>${escapeHtml(problem.problem_rating || "-")}</td>
+                <td><a href="${escapeHtml(problem.cf_link)}" target="_blank" rel="noreferrer">Open</a></td>
+              </tr>
+            `
+          )
+          .join("");
+
+        return `
+          <section>
+            <h2>${escapeHtml(formatTopicLabel(topic.topic))}</h2>
+            <p>Weakness: ${escapeHtml(topic.weakness_score)}</p>
+            <table>
+              <thead>
+                <tr>
+                  <th>Problem</th>
+                  <th>Key</th>
+                  <th>Rating</th>
+                  <th>Link</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${problemRows}
+              </tbody>
+            </table>
+          </section>
+        `;
+      })
+      .join("");
+
+    const html = `
+      <!doctype html>
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <title>Personalized Sheet - ${escapeHtml(sheetData.codeforces_id)}</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 24px; color: #0f172a; }
+            h1 { margin: 0 0 8px; }
+            .meta { color: #475569; margin-bottom: 20px; }
+            section { margin-top: 20px; page-break-inside: avoid; }
+            h2 { margin: 0 0 6px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+            th, td { border: 1px solid #cbd5e1; padding: 8px; font-size: 12px; text-align: left; }
+            th { background: #f1f5f9; }
+            a { color: #2563eb; text-decoration: none; }
+          </style>
+        </head>
+        <body>
+          <h1>CP Mentor Personalized Sheet</h1>
+          <div class="meta">
+            User: ${escapeHtml(sheetData.codeforces_id)} | Cluster: ${escapeHtml(sheetData.cluster)} | Topics: ${escapeHtml(
+              sheetData.top_weak_topics_count
+            )} | Problems: ${escapeHtml(totalProblems)}
+          </div>
+          ${topicSections}
+          <script>
+            window.onload = () => { window.print(); };
+          </script>
+        </body>
+      </html>
+    `;
+
+    const printWindow = window.open("", "sheet-pdf-export", "width=1100,height=800");
+    if (!printWindow) return;
+    printWindow.document.open();
+    printWindow.document.write(html);
+    printWindow.document.close();
+  };
+
   return (
     <div className="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen flex flex-col md:pl-64">
       <aside className="fixed left-0 top-0 hidden h-full w-64 flex-col border-r border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-card-dark md:flex">
@@ -653,8 +959,8 @@ function PersonalizedSheetPage({ onGoDashboard, onOpenPersonalizedContest, onOpe
               }}
             ></div>
             <div>
-              <p className="text-sm font-bold">tourist_fan</p>
-              <p className="text-xs text-slate-500">Expert</p>
+              <p className="text-sm font-bold">{authUser?.username || "user"}</p>
+              <p className="text-xs text-slate-500">{authUser?.codeforces_id || "Not linked"}</p>
             </div>
           </div>
         </div>
@@ -664,16 +970,20 @@ function PersonalizedSheetPage({ onGoDashboard, onOpenPersonalizedContest, onOpe
         <div className="flex items-center justify-between max-w-2xl mx-auto w-full">
           <h1 className="text-xl font-bold tracking-tight">Personalized Sheet</h1>
           <div className="flex items-center gap-3">
-            <button className="p-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors" title="Sync Sheet">
-              <span className="material-symbols-outlined text-[22px]">sync</span>
-            </button>
             <button
-              className="p-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+              className="p-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 disabled:opacity-60 transition-colors"
               title="Update Sheet"
+              onClick={() => fetchSheet(true)}
+              disabled={loading || !authUser?.codeforces_id}
             >
               <span className="material-symbols-outlined text-[22px]">update</span>
             </button>
-            <button className="hidden sm:flex items-center gap-1 px-3 py-2 rounded-lg bg-primary text-white font-medium text-sm hover:bg-primary/90 transition-colors">
+            <button
+              className="hidden sm:flex items-center gap-1 px-3 py-2 rounded-lg bg-primary text-white font-medium text-sm hover:bg-primary/90 disabled:opacity-60 transition-colors"
+              disabled={loading || topics.length === 0}
+              onClick={exportSheetAsPdf}
+              type="button"
+            >
               <span className="material-symbols-outlined text-[18px]">picture_as_pdf</span>
               <span>Export</span>
             </button>
@@ -687,180 +997,117 @@ function PersonalizedSheetPage({ onGoDashboard, onOpenPersonalizedContest, onOpe
             <div>
               <p className="text-slate-400 text-sm font-medium">Overall Progress</p>
               <h2 className="text-2xl font-bold mt-1">
-                12 / 25 <span className="text-sm font-normal text-slate-500">Problems</span>
+                {totalProblems} <span className="text-sm font-normal text-slate-500">Suggested Problems</span>
               </h2>
             </div>
             <div className="text-right">
-              <span className="text-primary font-bold">48%</span>
+              <span className="text-primary font-bold">{sheetData?.cluster ?? "-"}</span>
             </div>
           </div>
           <div className="w-full bg-slate-800 rounded-full h-2.5">
-            <div className="bg-primary h-2.5 rounded-full" style={{ width: "48%" }}></div>
+            <div className="bg-primary h-2.5 rounded-full" style={{ width: `${Math.min(totalProblems * 4, 100)}%` }}></div>
           </div>
         </div>
 
         <div className="space-y-4">
-          <div className="bg-[#1c2433] rounded-xl border border-slate-800 overflow-hidden">
-            <div className="p-4 flex items-center justify-between cursor-pointer">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="material-symbols-outlined text-primary">psychology</span>
-                  <h3 className="font-bold text-lg">Dynamic Programming</h3>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 bg-slate-800 h-1.5 rounded-full max-w-[120px]">
-                    <div className="bg-accent-emerald h-1.5 rounded-full" style={{ width: "60%" }}></div>
-                  </div>
-                  <span className="text-xs font-medium text-slate-400">3/5 Completed</span>
-                </div>
-              </div>
-              <span className="material-symbols-outlined text-slate-500">expand_less</span>
+          {!authUser?.codeforces_id ? (
+            <div className="bg-[#1c2433] rounded-xl border border-slate-800 p-4 text-sm text-slate-300">
+              Log in with a Codeforces-linked account to generate your personalized sheet.
             </div>
+          ) : null}
 
-            <div className="border-t border-slate-800 bg-background-dark/40">
-              <div className="px-4 py-3 flex items-center justify-between hover:bg-white/5 transition-colors border-b border-slate-800/50">
-                <div className="flex flex-col gap-1">
-                  <a className="text-sm font-medium hover:text-primary transition-colors" href="#">
-                    Climbing Stairs
-                  </a>
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-accent-emerald/10 text-accent-emerald border border-accent-emerald/20">
-                      Easy
-                    </span>
-                  </div>
-                </div>
-                <span className="material-symbols-outlined text-accent-emerald filled-icon">check_circle</span>
-              </div>
+          {loading ? (
+            <div className="bg-[#1c2433] rounded-xl border border-slate-800 p-4 text-sm text-slate-300">Generating recommendations...</div>
+          ) : null}
 
-              <div className="px-4 py-3 flex items-center justify-between hover:bg-white/5 transition-colors border-b border-slate-800/50">
-                <div className="flex flex-col gap-1">
-                  <a className="text-sm font-medium hover:text-primary transition-colors" href="#">
-                    Longest Palindromic Subsequence
-                  </a>
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-accent-amber/10 text-accent-amber border border-accent-amber/20">
-                      Medium
-                    </span>
-                  </div>
-                </div>
-                <span className="material-symbols-outlined text-accent-emerald filled-icon">check_circle</span>
-              </div>
+          {sheetError ? <div className="bg-[#1c2433] rounded-xl border border-red-800 p-4 text-sm text-red-300">{sheetError}</div> : null}
 
-              <div className="px-4 py-3 flex items-center justify-between hover:bg-white/5 transition-colors border-b border-slate-800/50">
-                <div className="flex flex-col gap-1">
-                  <a className="text-sm font-medium hover:text-primary transition-colors" href="#">
-                    Edit Distance
-                  </a>
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-accent-rose/10 text-accent-rose border border-accent-rose/20">
-                      Hard
-                    </span>
-                  </div>
-                </div>
-                <span className="material-symbols-outlined text-slate-600">hourglass_empty</span>
-              </div>
-
-              <div className="px-4 py-3 flex items-center justify-between hover:bg-white/5 transition-colors border-b border-slate-800/50">
-                <div className="flex flex-col gap-1">
-                  <a className="text-sm font-medium hover:text-primary transition-colors" href="#">
-                    Coin Change II
-                  </a>
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-accent-amber/10 text-accent-amber border border-accent-amber/20">
-                      Medium
-                    </span>
-                  </div>
-                </div>
-                <span className="material-symbols-outlined text-accent-emerald filled-icon">check_circle</span>
-              </div>
-
-              <div className="px-4 py-3 flex items-center justify-between hover:bg-white/5 transition-colors">
-                <div className="flex flex-col gap-1">
-                  <a className="text-sm font-medium hover:text-primary transition-colors" href="#">
-                    House Robber
-                  </a>
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-accent-emerald/10 text-accent-emerald border border-accent-emerald/20">
-                      Easy
-                    </span>
-                  </div>
-                </div>
-                <span className="material-symbols-outlined text-slate-600">hourglass_empty</span>
-              </div>
+          {!loading && !sheetError && authUser?.codeforces_id && topics.length === 0 ? (
+            <div className="bg-[#1c2433] rounded-xl border border-slate-800 p-4 text-sm text-slate-300">
+              No recommendations found for this user yet.
             </div>
-          </div>
+          ) : null}
 
-          <div className="bg-[#1c2433] rounded-xl border border-slate-800 overflow-hidden">
-            <div className="p-4 flex items-center justify-between cursor-pointer">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="material-symbols-outlined text-primary">match_case</span>
-                  <h3 className="font-bold text-lg">Strings</h3>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 bg-slate-800 h-1.5 rounded-full max-w-[120px]">
-                    <div className="bg-accent-emerald h-1.5 rounded-full" style={{ width: "80%" }}></div>
-                  </div>
-                  <span className="text-xs font-medium text-slate-400">4/5 Completed</span>
-                </div>
-              </div>
-              <span className="material-symbols-outlined text-slate-500">expand_more</span>
-            </div>
-          </div>
+          {!loading && !sheetError
+            ? topics.map((topicRow) => (
+                <div className="bg-[#1c2433] rounded-xl border border-slate-800 overflow-hidden" key={topicRow.topic}>
+                  <button
+                    className="w-full p-4 flex items-center justify-between hover:bg-white/5 transition-colors"
+                    onClick={() =>
+                      setExpandedTopics((prev) => ({
+                        ...prev,
+                        [topicRow.topic]: !prev[topicRow.topic],
+                      }))
+                    }
+                    type="button"
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="material-symbols-outlined text-primary">psychology</span>
+                        <h3 className="font-bold text-lg">{formatTopicLabel(topicRow.topic)}</h3>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1 bg-slate-800 h-1.5 rounded-full max-w-[120px]">
+                          <div
+                            className="bg-accent-rose h-1.5 rounded-full"
+                            style={{ width: `${Math.min(Math.max(topicRow.weakness_score * 40, 10), 100)}%` }}
+                          ></div>
+                        </div>
+                        <span className="text-xs font-medium text-slate-400">
+                          {topicRow.solved_unique}/{topicRow.attempted_unique} Solved
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs font-semibold text-slate-400">Weakness {topicRow.weakness_score}</span>
+                      <span className="material-symbols-outlined text-slate-400">
+                        {expandedTopics[topicRow.topic] ? "expand_less" : "expand_more"}
+                      </span>
+                    </div>
+                  </button>
 
-          <div className="bg-[#1c2433] rounded-xl border border-slate-800 overflow-hidden">
-            <div className="p-4 flex items-center justify-between cursor-pointer">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="material-symbols-outlined text-primary">view_kanban</span>
-                  <h3 className="font-bold text-lg">Arrays</h3>
+                  {expandedTopics[topicRow.topic] ? (
+                    <div className="border-t border-slate-800 bg-background-dark/40">
+                      {(topicRow.problems || []).map((problem, idx) => {
+                        const difficulty = difficultyFromRating(problem.problem_rating);
+                        const isLast = idx === topicRow.problems.length - 1;
+                        return (
+                          <div
+                            className={`px-4 py-3 flex items-center justify-between hover:bg-white/5 transition-colors ${
+                              !isLast ? "border-b border-slate-800/50" : ""
+                            }`}
+                            key={problem.problem_key}
+                          >
+                            <div className="flex flex-col gap-1">
+                              <a
+                                className="text-sm font-medium hover:text-primary transition-colors"
+                                href={problem.cf_link}
+                                rel="noreferrer"
+                                target="_blank"
+                              >
+                                {problem.problem_name}
+                              </a>
+                              <div className="flex items-center gap-2">
+                                <span
+                                  className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${difficulty.cls}`}
+                                >
+                                  {difficulty.label}
+                                </span>
+                                <span className="text-[10px] text-slate-500">#{problem.problem_key}</span>
+                                <span className="text-[10px] text-slate-500">Rating {problem.problem_rating || "-"}</span>
+                              </div>
+                            </div>
+                            <span className="text-[10px] text-slate-500">
+                              SR {(Number(problem.success_rate || 0) * 100).toFixed(0)}%
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : null}
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 bg-slate-800 h-1.5 rounded-full max-w-[120px]">
-                    <div className="bg-accent-emerald h-1.5 rounded-full" style={{ width: "100%" }}></div>
-                  </div>
-                  <span className="text-xs font-medium text-slate-400">5/5 Completed</span>
-                </div>
-              </div>
-              <span className="material-symbols-outlined text-slate-500">expand_more</span>
-            </div>
-          </div>
-
-          <div className="bg-[#1c2433] rounded-xl border border-slate-800 overflow-hidden">
-            <div className="p-4 flex items-center justify-between cursor-pointer">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="material-symbols-outlined text-primary">account_tree</span>
-                  <h3 className="font-bold text-lg">Graphs</h3>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 bg-slate-800 h-1.5 rounded-full max-w-[120px]">
-                    <div className="bg-accent-emerald h-1.5 rounded-full" style={{ width: "20%" }}></div>
-                  </div>
-                  <span className="text-xs font-medium text-slate-400">1/5 Completed</span>
-                </div>
-              </div>
-              <span className="material-symbols-outlined text-slate-500">expand_more</span>
-            </div>
-          </div>
-
-          <div className="bg-[#1c2433] rounded-xl border border-slate-800 overflow-hidden">
-            <div className="p-4 flex items-center justify-between cursor-pointer">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="material-symbols-outlined text-primary">savings</span>
-                  <h3 className="font-bold text-lg">Greedy</h3>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 bg-slate-800 h-1.5 rounded-full max-w-[120px]">
-                    <div className="bg-accent-emerald h-1.5 rounded-full" style={{ width: "40%" }}></div>
-                  </div>
-                  <span className="text-xs font-medium text-slate-400">2/5 Completed</span>
-                </div>
-              </div>
-              <span className="material-symbols-outlined text-slate-500">expand_more</span>
-            </div>
-          </div>
+              ))
+            : null}
         </div>
       </main>
     </div>
@@ -974,7 +1221,7 @@ function PersonalizedContestPage({ onGoDashboard, onOpenPersonalizedSheet, onOpe
                     <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20 font-bold uppercase">
                       Hard
                     </span>
-                    <span className="text-[10px] text-slate-400">• Graphs</span>
+                    <span className="text-[10px] text-slate-400">- Graphs</span>
                   </div>
                 </div>
               </div>
@@ -1000,7 +1247,7 @@ function PersonalizedContestPage({ onGoDashboard, onOpenPersonalizedSheet, onOpe
                     <span className="text-[10px] px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 font-bold uppercase">
                       Medium
                     </span>
-                    <span className="text-[10px] text-slate-400">• Strings</span>
+                    <span className="text-[10px] text-slate-400">- Strings</span>
                   </div>
                 </div>
               </div>
@@ -1026,7 +1273,7 @@ function PersonalizedContestPage({ onGoDashboard, onOpenPersonalizedSheet, onOpe
                     <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold uppercase">
                       Easy
                     </span>
-                    <span className="text-[10px] text-slate-400">• Math</span>
+                    <span className="text-[10px] text-slate-400">- Math</span>
                   </div>
                 </div>
               </div>
@@ -1050,7 +1297,7 @@ function PersonalizedContestPage({ onGoDashboard, onOpenPersonalizedSheet, onOpe
                     <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20 font-bold uppercase">
                       Hard
                     </span>
-                    <span className="text-[10px] text-slate-400">• DP</span>
+                    <span className="text-[10px] text-slate-400">- DP</span>
                   </div>
                 </div>
               </div>
@@ -1352,10 +1599,21 @@ function UpcomingContestsPage({ onGoDashboard, onOpenPersonalizedSheet, onOpenPe
 
 function App() {
   const [page, setPage] = useState("signup");
+  const [authUser, setAuthUser] = useState(null);
+  const [sheetCacheByUser, setSheetCacheByUser] = useState({});
+  const [dashboardCacheByUser, setDashboardCacheByUser] = useState({});
 
   if (page === "dashboard") {
+    const dashboardCacheKey = authUser?.codeforces_id || "";
     return (
       <DashboardPage
+        authUser={authUser}
+        cachedDashboard={dashboardCacheKey ? dashboardCacheByUser[dashboardCacheKey] : null}
+        onDashboardData={(data) => {
+          const key = data?.codeforces_id || dashboardCacheKey;
+          if (!key) return;
+          setDashboardCacheByUser((prev) => ({ ...prev, [key]: data }));
+        }}
         onOpenPersonalizedContest={() => setPage("personalized-contest")}
         onOpenPersonalizedSheet={() => setPage("personalized-sheet")}
         onOpenUpcoming={() => setPage("upcoming-contest")}
@@ -1364,8 +1622,16 @@ function App() {
   }
 
   if (page === "personalized-sheet") {
+    const cacheKey = authUser?.codeforces_id || "";
     return (
       <PersonalizedSheetPage
+        authUser={authUser}
+        cachedSheet={cacheKey ? sheetCacheByUser[cacheKey] : null}
+        onSheetData={(sheet) => {
+          const key = sheet?.codeforces_id || cacheKey;
+          if (!key) return;
+          setSheetCacheByUser((prev) => ({ ...prev, [key]: sheet }));
+        }}
         onGoDashboard={() => setPage("dashboard")}
         onOpenPersonalizedContest={() => setPage("personalized-contest")}
         onOpenUpcoming={() => setPage("upcoming-contest")}
@@ -1394,9 +1660,21 @@ function App() {
   }
 
   return page === "signup" ? (
-    <SignUpPage onAuthSuccess={() => setPage("dashboard")} onGoToLogin={() => setPage("login")} />
+    <SignUpPage
+      onAuthSuccess={(user) => {
+        setAuthUser(user);
+        setPage("dashboard");
+      }}
+      onGoToLogin={() => setPage("login")}
+    />
   ) : (
-    <LoginPage onAuthSuccess={() => setPage("dashboard")} onGoToSignup={() => setPage("signup")} />
+    <LoginPage
+      onAuthSuccess={(user) => {
+        setAuthUser(user);
+        setPage("dashboard");
+      }}
+      onGoToSignup={() => setPage("signup")}
+    />
   );
 }
 
