@@ -48,6 +48,91 @@ const difficultyFromRating = (rating) => {
   return { label: "Hard", cls: "bg-accent-rose/10 text-accent-rose border border-accent-rose/20" };
 };
 
+const platformStyles = {
+  Codeforces: {
+    badge: "bg-blue-500/10 text-blue-500 border border-blue-500/20",
+    accent: "text-primary",
+  },
+  LeetCode: {
+    badge: "bg-amber-500/10 text-amber-500 border border-amber-500/20",
+    accent: "text-amber-500",
+  },
+};
+
+const formatLocalDateTime = (isoString) => {
+  if (!isoString) return "TBD";
+  const date = new Date(isoString);
+  if (Number.isNaN(date.getTime())) return "TBD";
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+};
+
+const formatDuration = (seconds) => {
+  const total = Number(seconds);
+  if (!Number.isFinite(total) || total <= 0) return "TBD";
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.round((total % 3600) / 60);
+  if (hours <= 0) return `${minutes} min`;
+  if (minutes === 0) return `${hours} hours`;
+  return `${hours}h ${minutes}m`;
+};
+
+const formatTimeUntil = (isoString) => {
+  if (!isoString) return "Time TBD";
+  const start = new Date(isoString).getTime();
+  if (Number.isNaN(start)) return "Time TBD";
+  const diffMs = start - Date.now();
+  if (diffMs <= 0) return "Starting soon";
+  const diffMinutes = Math.floor(diffMs / 60000);
+  const days = Math.floor(diffMinutes / (60 * 24));
+  const hours = Math.floor((diffMinutes % (60 * 24)) / 60);
+  const minutes = diffMinutes % 60;
+  if (days > 0) return `Starts in ${days}d ${hours}h`;
+  if (hours > 0) return `Starts in ${hours}h ${minutes}m`;
+  return `Starts in ${minutes}m`;
+};
+
+const formatCountdown = (totalSeconds) => {
+  const safe = Math.max(0, Math.floor(totalSeconds));
+  const hours = Math.floor(safe / 3600);
+  const minutes = Math.floor((safe % 3600) / 60);
+  const seconds = safe % 60;
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+};
+
+const dateKey = (date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+
+const buildCalendarDays = (monthDate, contestDates) => {
+  const year = monthDate.getFullYear();
+  const month = monthDate.getMonth();
+  const firstOfMonth = new Date(year, month, 1);
+  const startWeekday = firstOfMonth.getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const daysInPrevMonth = new Date(year, month, 0).getDate();
+  const cells = [];
+
+  for (let i = 0; i < 42; i += 1) {
+    const dayIndex = i - startWeekday + 1;
+    const inMonth = dayIndex >= 1 && dayIndex <= daysInMonth;
+    const date = inMonth
+      ? new Date(year, month, dayIndex)
+      : dayIndex < 1
+        ? new Date(year, month - 1, daysInPrevMonth + dayIndex)
+        : new Date(year, month + 1, dayIndex - daysInMonth);
+    const key = dateKey(date);
+    const hasContest = contestDates.has(key);
+    const isToday = dateKey(new Date()) === key;
+    cells.push({ key, date, inMonth, hasContest, isToday });
+  }
+
+  return cells;
+};
+
 function SignUpPage({ onGoToLogin, onAuthSuccess }) {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -1114,7 +1199,202 @@ function PersonalizedSheetPage({
   );
 }
 
-function PersonalizedContestPage({ onGoDashboard, onOpenPersonalizedSheet, onOpenUpcoming }) {
+function PersonalizedContestPage({ onGoDashboard, onOpenPersonalizedSheet, onOpenUpcoming, authUser, cachedSheet }) {
+  const [contestProblems, setContestProblems] = useState([]);
+  const [contestLoading, setContestLoading] = useState(false);
+  const [contestError, setContestError] = useState("");
+  const [contestStarted, setContestStarted] = useState(false);
+  const [contestActive, setContestActive] = useState(false);
+  const [contestEnded, setContestEnded] = useState(false);
+  const [contestStartTime, setContestStartTime] = useState(null);
+  const [remainingSeconds, setRemainingSeconds] = useState(0);
+  const [refreshLoading, setRefreshLoading] = useState(false);
+  const [endedElapsedSeconds, setEndedElapsedSeconds] = useState(0);
+
+  const contestDurationSeconds = 2 * 60 * 60;
+
+  const loadContestProblems = useCallback(async () => {
+    const codeforcesId = authUser?.codeforces_id;
+    if (!codeforcesId) {
+      setContestError("Link a Codeforces ID to generate a personalized contest.");
+      return;
+    }
+
+    setContestLoading(true);
+    setContestError("");
+    try {
+      let sheetData = cachedSheet;
+      if (!sheetData) {
+        const sheetResponse = await fetch("/api/recommendations/weak-topics", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ codeforcesId, perTopic: 5, forceRefresh: false }),
+        });
+        const sheetContentType = sheetResponse.headers.get("content-type") || "";
+        sheetData = sheetContentType.includes("application/json") ? await sheetResponse.json() : null;
+        if (!sheetResponse.ok) {
+          throw new Error(sheetData?.detail || `Unable to load sheet (HTTP ${sheetResponse.status})`);
+        }
+      }
+
+      const response = await fetch("/api/recommendations/weak-topics", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ codeforcesId, perTopic: 6, forceRefresh: true }),
+      });
+      const contentType = response.headers.get("content-type") || "";
+      const data = contentType.includes("application/json") ? await response.json() : null;
+      if (!response.ok) {
+        throw new Error(data?.detail || `Unable to load contest (HTTP ${response.status})`);
+      }
+
+      const sheetTopics = (sheetData?.recommendations || []).slice(0, 4);
+      const allTopics = data?.recommendations || [];
+      const sheetKeys = new Set(
+        (sheetData?.recommendations || [])
+          .flatMap((topicRow) => topicRow.problems || [])
+          .map((problem) => problem.problem_key)
+          .filter(Boolean)
+      );
+      const topicMap = new Map(allTopics.map((topicRow) => [topicRow.topic, topicRow]));
+      const isValidCfLink = (link) => {
+        if (!link || typeof link !== "string") return false;
+        return /codeforces\.com\/(contest\/\d+\/problem\/[A-Z0-9]+|problemset\/problem\/\d+\/[A-Z0-9]+)/i.test(link);
+      };
+      const normalizeProblem = (topic, problem) => {
+        if (!problem || !isValidCfLink(problem.cf_link)) return null;
+        return {
+          topic,
+          title: problem.problem_name,
+          problem_key: problem.problem_key,
+          rating: problem.problem_rating,
+          cf_link: problem.cf_link,
+          status: "not_attempted",
+        };
+      };
+      const pickSixth = (topicRow) => {
+        const contestTopic = topicMap.get(topicRow.topic) || topicRow;
+        const list = contestTopic.problems || [];
+        const candidate = list[5];
+        if (!candidate || !isValidCfLink(candidate.cf_link)) return null;
+        return normalizeProblem(topicRow.topic, candidate);
+      };
+
+      const problems = [];
+      const usedTopics = new Set();
+
+      for (const topicRow of sheetTopics) {
+        const picked = pickSixth(topicRow);
+        if (!picked) continue;
+        problems.push(picked);
+        usedTopics.add(topicRow.topic);
+      }
+
+      if (problems.length < 4) {
+        for (const topicRow of allTopics) {
+          if (problems.length === 4) break;
+          if (usedTopics.has(topicRow.topic)) continue;
+          const picked = pickSixth(topicRow);
+          if (!picked) continue;
+          problems.push(picked);
+          usedTopics.add(topicRow.topic);
+        }
+      }
+
+      setContestProblems(problems);
+      if (problems.length < 4) {
+        setContestError("Not enough 6th problems available across weak topics.");
+      }
+    } catch (err) {
+      setContestError(err?.message || "Failed to load contest problems");
+    } finally {
+      setContestLoading(false);
+    }
+  }, [authUser?.codeforces_id]);
+
+  const refreshContestStatus = useCallback(async () => {
+    const codeforcesId = authUser?.codeforces_id;
+    if (!codeforcesId || contestProblems.length === 0) return;
+
+    setRefreshLoading(true);
+    try {
+      const response = await fetch("/api/contest/status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          codeforcesId,
+          problemKeys: contestProblems.map((problem) => problem.problem_key),
+        }),
+      });
+      const contentType = response.headers.get("content-type") || "";
+      const data = contentType.includes("application/json") ? await response.json() : null;
+      if (!response.ok) {
+        throw new Error(data?.detail || `Unable to refresh status (HTTP ${response.status})`);
+      }
+      const solvedKeys = new Set(data?.solved_keys || []);
+      setContestProblems((prev) =>
+        prev.map((problem) =>
+          solvedKeys.has(problem.problem_key) ? { ...problem, status: "solved" } : problem
+        )
+      );
+    } catch {
+      // Keep previous status on failure.
+    } finally {
+      setRefreshLoading(false);
+    }
+  }, [authUser?.codeforces_id, contestProblems]);
+
+  useEffect(() => {
+    loadContestProblems();
+  }, [loadContestProblems]);
+
+  useEffect(() => {
+    if (!contestActive || !contestStartTime) return;
+    const tick = () => {
+      const elapsed = Math.floor((Date.now() - contestStartTime) / 1000);
+      const nextRemaining = Math.max(0, contestDurationSeconds - elapsed);
+      setRemainingSeconds(nextRemaining);
+      if (nextRemaining <= 0) {
+        setContestActive(false);
+        setContestEnded(true);
+      }
+    };
+    tick();
+    const timer = setInterval(tick, 1000);
+    return () => clearInterval(timer);
+  }, [contestActive, contestStartTime]);
+
+  const handleStartContest = () => {
+    if (contestActive) return;
+    setContestStarted(true);
+    setContestActive(true);
+    setContestEnded(false);
+    setEndedElapsedSeconds(0);
+    const start = Date.now();
+    setContestStartTime(start);
+    setRemainingSeconds(contestDurationSeconds);
+  };
+
+  const handleEndContest = () => {
+    if (!window.confirm("End contest now? Your timer will stop and a summary will be shown.")) {
+      return;
+    }
+    const elapsed = contestStartTime ? Math.min(contestDurationSeconds, Math.max(0, Math.floor((Date.now() - contestStartTime) / 1000))) : 0;
+    setEndedElapsedSeconds(elapsed);
+    setContestActive(false);
+    setContestEnded(true);
+  };
+
+  const solvedCount = contestProblems.filter((problem) => problem.status === "solved").length;
+  const totalPoints = contestProblems.reduce((sum, problem) => sum + (Number(problem.rating) || 0), 0);
+  const scoredPoints = contestProblems.reduce(
+    (sum, problem) => sum + (problem.status === "solved" ? Number(problem.rating) || 0 : 0),
+    0
+  );
+  const progressPct = contestProblems.length
+    ? Math.round((solvedCount / contestProblems.length) * 100)
+    : 0;
+
   return (
     <div className="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col font-display md:pl-64">
       <aside className="fixed left-0 top-0 hidden h-full w-64 flex-col border-r border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-card-dark md:flex">
@@ -1170,16 +1450,33 @@ function PersonalizedContestPage({ onGoDashboard, onOpenPersonalizedSheet, onOpe
             <span className="material-symbols-outlined text-primary text-2xl">trophy</span>
             <h1 className="text-xl font-bold tracking-tight">Personalized Contest</h1>
           </div>
-          <button className="p-2 hover:bg-slate-800 rounded-full transition-colors">
+          <button
+            className="p-2 hover:bg-slate-800 rounded-full transition-colors disabled:opacity-60"
+            onClick={refreshContestStatus}
+            type="button"
+            disabled={refreshLoading || contestProblems.length === 0}
+          >
             <span className="material-symbols-outlined text-slate-400">sync</span>
           </button>
         </div>
         <div className="flex gap-3 pb-2">
-          <button className="flex-1 bg-gradient-to-r from-primary to-[#6366f1] text-white py-2.5 rounded-lg font-bold text-sm shadow-lg shadow-primary/20 flex items-center justify-center gap-2">
+          <button
+            className="flex-1 bg-gradient-to-r from-primary to-[#6366f1] text-white py-2.5 rounded-lg font-bold text-sm shadow-lg shadow-primary/20 flex items-center justify-center gap-2 disabled:opacity-60"
+            onClick={handleStartContest}
+            type="button"
+            disabled={contestActive || contestProblems.length === 0}
+          >
             <span className="material-symbols-outlined text-sm">play_arrow</span>
             Start Contest
           </button>
-          <button className="flex-1 border border-red-500/30 text-red-500/40 py-2.5 rounded-lg font-bold text-sm cursor-not-allowed flex items-center justify-center gap-2">
+          <button
+            className={`flex-1 border py-2.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2 ${
+              contestActive ? "border-red-500/60 text-red-500" : "border-red-500/30 text-red-500/40 cursor-not-allowed"
+            }`}
+            onClick={handleEndContest}
+            type="button"
+            disabled={!contestActive}
+          >
             <span className="material-symbols-outlined text-sm">stop</span>
             End Contest
           </button>
@@ -1187,140 +1484,159 @@ function PersonalizedContestPage({ onGoDashboard, onOpenPersonalizedSheet, onOpe
       </header>
 
       <main className="flex-1 overflow-y-auto px-4 py-6 space-y-6 pb-32">
-        <section className="relative group">
-          <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/30 to-purple-500/30 rounded-xl blur opacity-30 group-hover:opacity-50 transition duration-1000"></div>
-          <div className="relative contest-glass-card rounded-xl p-6 flex flex-col items-center justify-center text-center overflow-hidden">
-            <div className="absolute top-4 right-4 flex items-center gap-1.5">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-              </span>
-              <span className="text-[10px] font-bold text-red-500 tracking-widest uppercase">Live</span>
-            </div>
-            <h2 className="text-4xl md:text-5xl font-mono font-extrabold tracking-widest text-white drop-shadow-sm">01:59:23</h2>
-            <p className="text-slate-400 text-sm mt-2 font-medium">Contest Time Remaining</p>
-            <div className="mt-4 w-full bg-slate-800/50 h-1 rounded-full overflow-hidden">
-              <div className="bg-primary h-full w-[65%]" style={{ boxShadow: "0 0 8px #256af4" }}></div>
-            </div>
-          </div>
-        </section>
-
-        <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold">Problems</h3>
-            <span className="text-xs text-slate-500 font-medium">4 Total</span>
-          </div>
-
-          <div className="contest-glass-card rounded-xl p-4 transition-all active:scale-[0.98]">
-            <div className="flex justify-between items-start mb-3">
-              <div className="flex gap-3">
-                <div className="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center text-primary font-bold">A</div>
-                <div>
-                  <h4 className="font-bold text-white">Tree Rotations</h4>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20 font-bold uppercase">
-                      Hard
-                    </span>
-                    <span className="text-[10px] text-slate-400">- Graphs</span>
-                  </div>
-                </div>
-              </div>
-              <span className="status-solved text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1">
-                <span className="material-symbols-outlined text-xs">check_circle</span> Solved
+        {contestEnded && contestStarted ? (
+          <section className="contest-glass-card rounded-xl p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-white">Contest Summary</h3>
+              <span className="text-xs text-slate-400 font-medium">
+                {scoredPoints}/{totalPoints} Points
               </span>
             </div>
-            <div className="flex items-center justify-between mt-4">
-              <span className="text-xs font-semibold text-slate-400 tracking-wider">800 PTS</span>
-              <button className="bg-slate-800 hover:bg-slate-700 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition-colors">
-                View Solution
-              </button>
-            </div>
-          </div>
-
-          <div className="contest-glass-card rounded-xl p-4 transition-all active:scale-[0.98] border-l-2 border-l-yellow-500">
-            <div className="flex justify-between items-start mb-3">
-              <div className="flex gap-3">
-                <div className="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center text-primary font-bold">B</div>
-                <div>
-                  <h4 className="font-bold text-white">String Matching</h4>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 font-bold uppercase">
-                      Medium
+            <div className="text-xs text-slate-400">Time Taken: {formatCountdown(endedElapsedSeconds)}</div>
+            <div className="space-y-3">
+              {contestProblems.map((problem) => (
+                <div className="flex items-center justify-between text-sm" key={problem.problem_key}>
+                  <div>
+                    <a
+                      className="font-medium text-white hover:text-primary transition-colors"
+                      href={problem.cf_link}
+                      rel="noreferrer"
+                      target="_blank"
+                    >
+                      {problem.title}
+                    </a>
+                    <p className="text-[10px] text-slate-400">{formatTopicLabel(problem.topic)}</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-slate-400">{problem.rating || 0} pts</span>
+                    <span
+                      className={`text-[10px] font-bold px-2 py-1 rounded-full ${
+                        problem.status === "solved" ? "status-solved" : "status-none"
+                      }`}
+                    >
+                      {problem.status === "solved" ? "Solved" : "Unsolved"}
                     </span>
-                    <span className="text-[10px] text-slate-400">- Strings</span>
                   </div>
                 </div>
-              </div>
-              <span className="status-attempted text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1">
-                <span className="material-symbols-outlined text-xs">pending</span> Attempted
-              </span>
+              ))}
             </div>
-            <div className="flex items-center justify-between mt-4">
-              <span className="text-xs font-semibold text-slate-400 tracking-wider">500 PTS</span>
-              <button className="bg-primary/20 text-primary border border-primary/30 px-4 py-1.5 rounded-lg text-xs font-bold transition-colors">
-                Resume
-              </button>
-            </div>
-          </div>
-
-          <div className="contest-glass-card rounded-xl p-4 transition-all active:scale-[0.98]">
-            <div className="flex justify-between items-start mb-3">
-              <div className="flex gap-3">
-                <div className="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center text-primary font-bold">C</div>
-                <div>
-                  <h4 className="font-bold text-white">Prefix Sums</h4>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold uppercase">
-                      Easy
+          </section>
+        ) : (
+          <>
+            <section className="relative group">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/30 to-purple-500/30 rounded-xl blur opacity-30 group-hover:opacity-50 transition duration-1000"></div>
+              <div className="relative contest-glass-card rounded-xl p-6 flex flex-col items-center justify-center text-center overflow-hidden">
+                <div className="absolute top-4 right-4 flex items-center gap-1.5">
+                  {contestActive ? (
+                    <>
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                      </span>
+                      <span className="text-[10px] font-bold text-red-500 tracking-widest uppercase">Live</span>
+                    </>
+                  ) : (
+                    <span className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">
+                      {contestEnded ? "Ended" : "Idle"}
                     </span>
-                    <span className="text-[10px] text-slate-400">- Math</span>
-                  </div>
+                  )}
+                </div>
+                <h2 className="text-4xl md:text-5xl font-mono font-extrabold tracking-widest text-white drop-shadow-sm">
+                  {contestStarted ? formatCountdown(remainingSeconds) : "00:00:00"}
+                </h2>
+                <p className="text-slate-400 text-sm mt-2 font-medium">Contest Time Remaining</p>
+                <div className="mt-4 w-full bg-slate-800/50 h-1 rounded-full overflow-hidden">
+                  <div
+                    className="bg-primary h-full"
+                    style={{
+                      width: `${contestStarted ? Math.max(0, Math.min(100, (remainingSeconds / contestDurationSeconds) * 100)) : 0}%`,
+                      boxShadow: "0 0 8px #256af4",
+                    }}
+                  ></div>
                 </div>
               </div>
-              <span className="status-none text-[10px] font-bold px-2 py-1 rounded-full">Not Attempted</span>
-            </div>
-            <div className="flex items-center justify-between mt-4">
-              <span className="text-xs font-semibold text-slate-400 tracking-wider">300 PTS</span>
-              <button className="bg-primary text-white px-4 py-1.5 rounded-lg text-xs font-bold shadow-md shadow-primary/10 transition-colors">
-                Solve
-              </button>
-            </div>
-          </div>
+            </section>
 
-          <div className="contest-glass-card rounded-xl p-4 transition-all active:scale-[0.98]">
-            <div className="flex justify-between items-start mb-3">
-              <div className="flex gap-3">
-                <div className="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center text-primary font-bold">D</div>
-                <div>
-                  <h4 className="font-bold text-white">Dynamic Grid</h4>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20 font-bold uppercase">
-                      Hard
-                    </span>
-                    <span className="text-[10px] text-slate-400">- DP</span>
-                  </div>
-                </div>
+            <section className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-bold">Problems</h3>
+                <span className="text-xs text-slate-500 font-medium">{contestProblems.length} Total</span>
               </div>
-              <span className="status-none text-[10px] font-bold px-2 py-1 rounded-full">Not Attempted</span>
-            </div>
-            <div className="flex items-center justify-between mt-4">
-              <span className="text-xs font-semibold text-slate-400 tracking-wider">1000 PTS</span>
-              <button className="bg-primary text-white px-4 py-1.5 rounded-lg text-xs font-bold shadow-md shadow-primary/10 transition-colors">
-                Solve
-              </button>
-            </div>
-          </div>
-        </section>
+
+              {contestLoading ? (
+                <div className="contest-glass-card rounded-xl p-4 text-sm text-slate-400">Loading contest problems...</div>
+              ) : null}
+              {contestError ? (
+                <div className="contest-glass-card rounded-xl p-4 text-sm text-red-400">{contestError}</div>
+              ) : null}
+              {!contestStarted && !contestLoading && !contestError ? (
+                <div className="contest-glass-card rounded-xl p-6 text-center text-sm text-slate-400">
+                  Start the contest to reveal your four weakest-topic problems.
+                </div>
+              ) : null}
+
+              {contestStarted
+                ? contestProblems.map((problem, idx) => {
+                    const difficulty = difficultyFromRating(problem.rating);
+                    const letter = String.fromCharCode(65 + idx);
+                    return (
+                      <div className="contest-glass-card rounded-xl p-4 transition-all active:scale-[0.98]" key={problem.problem_key}>
+                        <div className="flex justify-between items-start mb-3">
+                          <div className="flex gap-3">
+                            <div className="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center text-primary font-bold">
+                              {letter}
+                            </div>
+                            <div>
+                              <h4 className="font-bold text-white">{problem.title}</h4>
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${difficulty.cls}`}>
+                                  {difficulty.label}
+                                </span>
+                                <span className="text-[10px] text-slate-400">- {formatTopicLabel(problem.topic)}</span>
+                              </div>
+                            </div>
+                          </div>
+                          {problem.status === "solved" ? (
+                            <span className="status-solved text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                              <span className="material-symbols-outlined text-xs">check_circle</span> Solved
+                            </span>
+                          ) : (
+                            <span className="status-none text-[10px] font-bold px-2 py-1 rounded-full">Not Attempted</span>
+                          )}
+                        </div>
+                        <div className="flex items-center justify-between mt-4">
+                          <span className="text-xs font-semibold text-slate-400 tracking-wider">{problem.rating || "-"} PTS</span>
+                          <a
+                            className={`px-4 py-1.5 rounded-lg text-xs font-bold shadow-md shadow-primary/10 transition-colors ${
+                              contestEnded ? "bg-slate-700 text-slate-400 cursor-not-allowed" : "bg-primary text-white"
+                            }`}
+                            href={contestEnded ? "#" : problem.cf_link}
+                            rel="noreferrer"
+                            target={contestEnded ? undefined : "_blank"}
+                            aria-disabled={contestEnded}
+                          >
+                            Solve
+                          </a>
+                        </div>
+                      </div>
+                    );
+                  })
+                : null}
+            </section>
+          </>
+        )}
       </main>
 
       <div className="fixed bottom-0 left-0 right-0 z-40 md:left-64">
         <div className="bg-background-dark/95 border-t border-slate-800 px-4 py-3 backdrop-blur-sm">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-white">1/4 Solved</span>
-            <span className="text-[10px] text-slate-400 flex items-center gap-1 italic">Keep pushing</span>
+            <span className="text-xs font-bold text-white">{solvedCount}/{contestProblems.length} Solved</span>
+            <span className="text-[10px] text-slate-400 flex items-center gap-1 italic">
+              {contestActive ? "Contest live" : contestEnded ? "Contest ended" : "Ready when you are"}
+            </span>
           </div>
           <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-            <div className="bg-primary h-full w-[25%] transition-all duration-500"></div>
+            <div className="bg-primary h-full transition-all duration-500" style={{ width: `${progressPct}%` }}></div>
           </div>
         </div>
         <nav className="flex justify-between bg-slate-900 border-t border-slate-800 px-6 py-3 md:hidden">
@@ -1351,6 +1667,58 @@ function PersonalizedContestPage({ onGoDashboard, onOpenPersonalizedSheet, onOpe
 }
 
 function UpcomingContestsPage({ onGoDashboard, onOpenPersonalizedSheet, onOpenPersonalizedContest }) {
+  const [contests, setContests] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [calendarMonth, setCalendarMonth] = useState(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
+  const [lastUpdated, setLastUpdated] = useState("");
+  const [selectedDateKey, setSelectedDateKey] = useState("");
+
+  const loadUpcomingContests = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const response = await fetch("/api/contests/upcoming");
+      const contentType = response.headers.get("content-type") || "";
+      const data = contentType.includes("application/json") ? await response.json() : null;
+      if (!response.ok) {
+        throw new Error(data?.detail || `Unable to load contests (HTTP ${response.status})`);
+      }
+      const list = Array.isArray(data?.data) ? data.data : [];
+      setContests(list);
+      setLastUpdated(data?.last_updated || "");
+    } catch (err) {
+      setError(err?.message || "Failed to load upcoming contests");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadUpcomingContests();
+  }, [loadUpcomingContests]);
+
+  const contestDates = new Set(
+    contests
+      .map((contest) => new Date(contest.start_time))
+      .filter((date) => !Number.isNaN(date.getTime()))
+      .map((date) => dateKey(date))
+  );
+  const calendarDays = buildCalendarDays(calendarMonth, contestDates);
+  const monthLabel = new Intl.DateTimeFormat(undefined, { month: "long", year: "numeric" }).format(calendarMonth);
+  const filteredContests = selectedDateKey
+    ? contests.filter((contest) => {
+        const date = new Date(contest.start_time);
+        return !Number.isNaN(date.getTime()) && dateKey(date) === selectedDateKey;
+      })
+    : contests;
+  const listLabel = selectedDateKey
+    ? `${filteredContests.length} Contest${filteredContests.length === 1 ? "" : "s"} on ${selectedDateKey}`
+    : `${contests.length} Contest${contests.length === 1 ? "" : "s"} Found`;
+
   return (
     <div className="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col md:pl-64">
       <aside className="fixed left-0 top-0 hidden h-full w-64 flex-col border-r border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-card-dark md:flex">
@@ -1419,9 +1787,17 @@ function UpcomingContestsPage({ onGoDashboard, onOpenPersonalizedSheet, onOpenPe
       <header className="p-4 pt-6 flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Upcoming Contests</h1>
-          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Stay updated with future CP rounds</p>
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
+            Stay updated with future CP rounds
+            {lastUpdated ? <span className="ml-2 text-xs text-slate-400">Updated {formatLocalDateTime(lastUpdated)}</span> : null}
+          </p>
         </div>
-        <button className="p-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
+        <button
+          className="p-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-60"
+          onClick={loadUpcomingContests}
+          type="button"
+          disabled={loading}
+        >
           <span className="material-symbols-outlined">sync</span>
         </button>
       </header>
@@ -1429,12 +1805,24 @@ function UpcomingContestsPage({ onGoDashboard, onOpenPersonalizedSheet, onOpenPe
       <section className="px-4 mb-6">
         <div className="bg-white dark:bg-[#161b22] rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-800">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-base">October 2023</h2>
+            <h2 className="font-semibold text-base">{monthLabel}</h2>
             <div className="flex gap-2">
-              <button className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded">
+              <button
+                className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded"
+                onClick={() =>
+                  setCalendarMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))
+                }
+                type="button"
+              >
                 <span className="material-symbols-outlined text-lg">chevron_left</span>
               </button>
-              <button className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded">
+              <button
+                className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded"
+                onClick={() =>
+                  setCalendarMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))
+                }
+                type="button"
+              >
                 <span className="material-symbols-outlined text-lg">chevron_right</span>
               </button>
             </div>
@@ -1443,154 +1831,119 @@ function UpcomingContestsPage({ onGoDashboard, onOpenPersonalizedSheet, onOpenPe
             <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
           </div>
           <div className="grid grid-cols-7 gap-y-1 text-center">
-            <div className="h-9"></div>
-            <div className="h-9"></div>
-            <div className="h-9"></div>
-            <div className="relative h-9 flex items-center justify-center text-sm">1</div>
-            <div className="relative h-9 flex items-center justify-center text-sm">2</div>
-            <div className="relative h-9 flex items-center justify-center text-sm">3</div>
-            <div className="relative h-9 flex items-center justify-center text-sm">
-              4<span className="absolute bottom-1 w-1 h-1 bg-primary rounded-full active-dot"></span>
-            </div>
-            <div className="relative h-9 flex items-center justify-center text-sm bg-primary/20 rounded-lg text-primary font-bold border border-primary/30">
-              5
-            </div>
-            <div className="relative h-9 flex items-center justify-center text-sm">6</div>
-            <div className="relative h-9 flex items-center justify-center text-sm">
-              7<span className="absolute bottom-1 w-1 h-1 bg-accent-purple rounded-full"></span>
-            </div>
-            <div className="relative h-9 flex items-center justify-center text-sm">8</div>
-            <div className="relative h-9 flex items-center justify-center text-sm">9</div>
-            <div className="relative h-9 flex items-center justify-center text-sm">10</div>
-            <div className="relative h-9 flex items-center justify-center text-sm">11</div>
-            <div className="relative h-9 flex items-center justify-center text-sm">
-              12<span className="absolute bottom-1 w-1 h-1 bg-primary rounded-full active-dot"></span>
-            </div>
-            <div className="relative h-9 flex items-center justify-center text-sm">13</div>
-            <div className="relative h-9 flex items-center justify-center text-sm">14</div>
-            <div className="relative h-9 flex items-center justify-center text-sm">15</div>
-            <div className="relative h-9 flex items-center justify-center text-sm">16</div>
-            <div className="relative h-9 flex items-center justify-center text-sm">17</div>
-            <div className="relative h-9 flex items-center justify-center text-sm">18</div>
-            <div className="relative h-9 flex items-center justify-center text-sm">19</div>
-            <div className="relative h-9 flex items-center justify-center text-sm">20</div>
-            <div className="relative h-9 flex items-center justify-center text-sm">21</div>
+            {calendarDays.map((day) => (
+              <button
+                key={day.key}
+                className={[
+                  "relative h-9 flex items-center justify-center text-sm transition-colors",
+                  day.inMonth ? "text-slate-900 dark:text-slate-100" : "text-slate-300 dark:text-slate-700",
+                  day.isToday ? "bg-primary/20 rounded-lg text-primary font-bold border border-primary/30" : "",
+                  selectedDateKey === day.key ? "ring-2 ring-primary/50 rounded-lg" : "",
+                ].join(" ")}
+                onClick={() => setSelectedDateKey(day.key)}
+                type="button"
+              >
+                {day.date.getDate()}
+                {day.hasContest ? (
+                  <span className="absolute bottom-1 w-1 h-1 bg-primary rounded-full active-dot"></span>
+                ) : null}
+              </button>
+            ))}
           </div>
         </div>
       </section>
 
-      <main className="flex-1 px-4 pb-24 overflow-y-auto">
+      <main className="flex-1 px-4 pb-24 overflow-y-auto custom-scrollbar">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold">Upcoming List</h2>
           <span className="text-xs bg-slate-200 dark:bg-slate-800 px-2 py-1 rounded-full text-slate-500 font-medium">
-            3 Contests Found
+            {listLabel}
           </span>
         </div>
+        {selectedDateKey ? (
+          <button
+            className="mb-3 text-xs font-semibold text-primary hover:underline"
+            onClick={() => setSelectedDateKey("")}
+            type="button"
+          >
+            Clear date filter
+          </button>
+        ) : null}
+        {error ? (
+          <div className="bg-white dark:bg-[#161b22] border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-sm text-red-400">
+            {error}
+          </div>
+        ) : null}
+        {loading && contests.length === 0 ? (
+          <div className="bg-white dark:bg-[#161b22] border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-sm text-slate-500">
+            Loading upcoming contests...
+          </div>
+        ) : null}
+        {!loading && contests.length === 0 && !error ? (
+          <div className="bg-white dark:bg-[#161b22] border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-sm text-slate-500">
+            No upcoming contests found for Codeforces or LeetCode.
+          </div>
+        ) : null}
+        {!loading && contests.length > 0 && filteredContests.length === 0 && selectedDateKey ? (
+          <div className="bg-white dark:bg-[#161b22] border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-sm text-slate-500">
+            No contests found on {selectedDateKey}.
+          </div>
+        ) : null}
         <div className="space-y-4">
-          <div className="bg-white dark:bg-[#161b22] border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
-            <div className="p-4">
-              <div className="flex justify-between items-start mb-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded bg-blue-500/10 text-blue-500 border border-blue-500/20">
-                    Codeforces
-                  </span>
-                  <span className="text-xs text-slate-500">Div. 2</span>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs font-bold text-primary">Starts in 2d 4h</p>
-                </div>
-              </div>
-              <h3 className="text-lg font-bold leading-tight mb-3">Codeforces Round 900</h3>
-              <div className="grid grid-cols-2 gap-4 text-slate-500 text-sm mb-4">
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-base">calendar_today</span>
-                  <span>Oct 12, 17:35</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-base">schedule</span>
-                  <span>2.0 hours</span>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <button className="flex-1 bg-gradient-to-r from-primary to-accent-purple text-white py-2.5 rounded-lg font-bold text-sm shadow-lg shadow-primary/20 active:scale-95 transition-transform">
-                  Register
-                </button>
-                <button className="px-3 py-2.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400">
-                  <span className="material-symbols-outlined text-xl">calendar_add_on</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-[#161b22] border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
-            <div className="p-4">
-              <div className="flex justify-between items-start mb-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded bg-purple-500/10 text-purple-500 border border-purple-500/20">
-                    AtCoder
-                  </span>
-                  <span className="text-xs text-slate-500">ABC 320</span>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs font-bold text-slate-400">Starts in 4d 1h</p>
-                </div>
-              </div>
-              <h3 className="text-lg font-bold leading-tight mb-3">AtCoder Beginner Contest 320</h3>
-              <div className="grid grid-cols-2 gap-4 text-slate-500 text-sm mb-4">
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-base">calendar_today</span>
-                  <span>Oct 14, 15:30</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-base">schedule</span>
-                  <span>1.5 hours</span>
+          {filteredContests.map((contest) => {
+            const style = platformStyles[contest.platform] || platformStyles.Codeforces;
+            const contestLink = contest.register_url || contest.registration_url || contest.url || "#";
+            return (
+              <div
+                className="bg-white dark:bg-[#161b22] border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm"
+                key={`${contest.platform}-${contest.id || contest.title}-${contest.start_time}`}
+              >
+                <div className="p-4">
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className={`text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded ${style.badge}`}>
+                        {contest.platform}
+                      </span>
+                      {contest.phase ? <span className="text-xs text-slate-500">{contest.phase}</span> : null}
+                    </div>
+                    <div className="text-right">
+                      <p className={`text-xs font-bold ${style.accent}`}>{formatTimeUntil(contest.start_time)}</p>
+                    </div>
+                  </div>
+                  <h3 className="text-lg font-bold leading-tight mb-3">{contest.title}</h3>
+                  <div className="grid grid-cols-2 gap-4 text-slate-500 text-sm mb-4">
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-base">calendar_today</span>
+                      <span>{formatLocalDateTime(contest.start_time)}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-base">schedule</span>
+                      <span>{formatDuration(contest.duration_seconds)}</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <a
+                      className="flex-1 bg-gradient-to-r from-primary to-accent-purple text-white py-2.5 rounded-lg font-bold text-sm shadow-lg shadow-primary/20 active:scale-95 transition-transform text-center"
+                      href={contestLink}
+                      rel="noreferrer"
+                      target={contestLink && contestLink !== "#" ? "_blank" : undefined}
+                    >
+                      View
+                    </a>
+                    <a
+                      className="px-3 py-2.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 flex items-center justify-center"
+                      href={contestLink}
+                      rel="noreferrer"
+                      target={contestLink && contestLink !== "#" ? "_blank" : undefined}
+                      aria-label="Open contest register page"
+                    >
+                      <span className="material-symbols-outlined text-xl">calendar_add_on</span>
+                    </a>
+                  </div>
                 </div>
               </div>
-              <div className="flex gap-2">
-                <button className="flex-1 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white py-2.5 rounded-lg font-bold text-sm active:scale-95 transition-transform">
-                  Details
-                </button>
-                <button className="px-3 py-2.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400">
-                  <span className="material-symbols-outlined text-xl">calendar_add_on</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-[#161b22] border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm opacity-80">
-            <div className="p-4">
-              <div className="flex justify-between items-start mb-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded bg-blue-500/10 text-blue-500 border border-blue-500/20">
-                    Codeforces
-                  </span>
-                  <span className="text-xs text-slate-500">Educational</span>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs font-bold text-slate-400">Starts in 6d 8h</p>
-                </div>
-              </div>
-              <h3 className="text-lg font-bold leading-tight mb-3">Educational Round 155</h3>
-              <div className="grid grid-cols-2 gap-4 text-slate-500 text-sm mb-4">
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-base">calendar_today</span>
-                  <span>Oct 16, 20:05</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-base">schedule</span>
-                  <span>2.0 hours</span>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <button className="flex-1 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white py-2.5 rounded-lg font-bold text-sm active:scale-95 transition-transform">
-                  Register
-                </button>
-                <button className="px-3 py-2.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400">
-                  <span className="material-symbols-outlined text-xl">calendar_add_on</span>
-                </button>
-              </div>
-            </div>
-          </div>
+            );
+          })}
         </div>
       </main>
     </div>
@@ -1640,8 +1993,14 @@ function App() {
   }
 
   if (page === "personalized-contest") {
+    const contestSheet =
+      authUser?.codeforces_id && sheetCacheByUser[authUser.codeforces_id]
+        ? sheetCacheByUser[authUser.codeforces_id]
+        : null;
     return (
       <PersonalizedContestPage
+        authUser={authUser}
+        cachedSheet={contestSheet}
         onGoDashboard={() => setPage("dashboard")}
         onOpenPersonalizedSheet={() => setPage("personalized-sheet")}
         onOpenUpcoming={() => setPage("upcoming-contest")}

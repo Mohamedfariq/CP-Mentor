@@ -2,6 +2,7 @@ import os
 from collections import defaultdict
 from functools import lru_cache
 import math
+from datetime import datetime, timezone
 from pathlib import Path
 import time
 from urllib.parse import urlencode
@@ -50,6 +51,11 @@ class RecommendationsPayload(BaseModel):
 
 class DashboardPayload(BaseModel):
     codeforcesId: str
+
+
+class ContestStatusPayload(BaseModel):
+    codeforcesId: str
+    problemKeys: list[str]
 
 
 DATASET_DIR = Path(__file__).resolve().parents[1] / "cf_dataset_ml"
@@ -293,6 +299,58 @@ def _cf_api_get(method: str, **params):
     return payload.get("result", [])
 
 
+def _iso_to_timestamp(iso_value: str):
+    if not iso_value:
+        return 0
+    try:
+        cleaned = iso_value.replace("Z", "+00:00")
+        return int(datetime.fromisoformat(cleaned).timestamp())
+    except (TypeError, ValueError):
+        return 0
+
+
+def _fetch_contest_hive(platform_slug: str):
+    url = f"https://contest-hive.vercel.app/api/{platform_slug}"
+    with urlopen(url, timeout=20) as resp:
+        payload = json.loads(resp.read().decode("utf-8"))
+    if not payload.get("ok"):
+        raise ValueError(f"Contest Hive API failed for {platform_slug}")
+    return payload
+
+
+def _get_problem_key(problem: dict, fallback_index: int = 0):
+    contest_id = problem.get("contestId")
+    index = problem.get("index")
+    if contest_id is not None and index:
+        return f"{contest_id}-{index}"
+
+    problemset_name = str(problem.get("problemsetName") or "").strip()
+    problem_name = str(problem.get("name") or "").strip()
+    if problemset_name and index:
+        return f"{problemset_name}-{index}"
+    if problem_name and index:
+        return f"{problem_name}-{index}"
+    if problem_name:
+        return problem_name
+    return f"misc-{fallback_index}"
+
+
+def _fetch_user_status_all(codeforces_id: str, max_total: int = 20000, batch_size: int = 5000):
+    all_rows = []
+    offset = 1
+    while len(all_rows) < max_total:
+        remaining = max_total - len(all_rows)
+        count = min(batch_size, remaining)
+        batch = _cf_api_get("user.status", handle=codeforces_id, **{"from": offset, "count": count})
+        if not batch:
+            break
+        all_rows.extend(batch)
+        if len(batch) < count:
+            break
+        offset += len(batch)
+    return all_rows
+
+
 def _to_title_case(text: str):
     return " ".join(part.capitalize() for part in text.split())
 
@@ -337,7 +395,7 @@ def _build_dashboard_data(codeforces_id: str):
     except Exception:
         rating_delta = 0
 
-    submissions = _cf_api_get("user.status", handle=codeforces_id, **{"from": 1, "count": 500})
+    submissions = _fetch_user_status_all(codeforces_id, max_total=20000, batch_size=5000)
 
     solved_problem_keys = set()
     topic_attempted = defaultdict(set)
@@ -348,11 +406,7 @@ def _build_dashboard_data(codeforces_id: str):
     for idx, sub in enumerate(submissions):
         problem = sub.get("problem") or {}
         contest_id = problem.get("contestId")
-        index = problem.get("index")
-        if contest_id is not None and index:
-            problem_key = f"{contest_id}-{index}"
-        else:
-            problem_key = f"misc-{idx}"
+        problem_key = _get_problem_key(problem, fallback_index=idx)
 
         raw_tags = [str(t).strip().lower() for t in (problem.get("tags") or [])]
         tags = [t for t in raw_tags if t in model_topics]
@@ -427,16 +481,11 @@ def _build_live_user_features(codeforces_id: str):
     user_profile = profile_rows[0] if profile_rows else {}
     rating = _to_float(user_profile.get("rating"), fallback=0.0)
 
-    submissions = _cf_api_get("user.status", handle=codeforces_id, **{"from": 1, "count": 5000})
+    submissions = _fetch_user_status_all(codeforces_id, max_total=20000, batch_size=5000)
     per_problem = {}
     for sub in submissions:
         problem = sub.get("problem") or {}
-        contest_id = problem.get("contestId")
-        index = problem.get("index")
-        if contest_id is None or not index:
-            continue
-
-        problem_key = f"{contest_id}-{index}"
+        problem_key = _get_problem_key(problem)
         tags = set()
         for t in problem.get("tags") or []:
             lowered = str(t).strip().lower()
@@ -680,3 +729,85 @@ def dashboard(payload: DashboardPayload):
         return _build_dashboard_data(codeforces_id)
     except Exception as exc:
         raise HTTPException(status_code=404, detail=f"Dashboard data fetch failed: {exc}")
+
+
+@app.post("/api/contest/status")
+def contest_status(payload: ContestStatusPayload):
+    codeforces_id = payload.codeforcesId.strip()
+    if not codeforces_id:
+        raise HTTPException(status_code=400, detail="codeforcesId is required")
+
+    problem_keys = [key for key in payload.problemKeys if key]
+    if not problem_keys:
+        return {"solved_keys": []}
+
+    try:
+        submissions = _fetch_user_status_all(codeforces_id, max_total=20000, batch_size=5000)
+    except Exception as exc:
+        raise HTTPException(status_code=404, detail=f"Codeforces fetch failed: {exc}")
+
+    solved_keys = set()
+    for idx, sub in enumerate(submissions):
+        if sub.get("verdict") != "OK":
+            continue
+        problem = sub.get("problem") or {}
+        problem_key = _get_problem_key(problem, fallback_index=idx)
+        if problem_key:
+            solved_keys.add(problem_key)
+
+    solved_filtered = [key for key in problem_keys if key in solved_keys]
+    return {"solved_keys": solved_filtered}
+
+
+@app.get("/api/contests/upcoming")
+def upcoming_contests():
+    platforms = {
+        "codeforces": "Codeforces",
+        "leetcode": "LeetCode",
+    }
+
+    contests = []
+    last_updated_values = []
+    now_ts = int(time.time())
+
+    for slug, label in platforms.items():
+        try:
+            payload = _fetch_contest_hive(slug)
+            updated = payload.get("lastUpdated") or payload.get("last_updated")
+            if updated:
+                last_updated_values.append(updated)
+
+            for item in payload.get("data", []):
+                title = item.get("title") or item.get("name") or "Upcoming Contest"
+                start_time = item.get("startTime") or item.get("start_time")
+                end_time = item.get("endTime") or item.get("end_time")
+                duration = item.get("duration") or item.get("duration_seconds")
+                url = item.get("url")
+                contest_id = item.get("id") or item.get("titleSlug") or item.get("slug")
+                phase = item.get("type") or item.get("category") or item.get("contestType")
+
+                start_ts = _iso_to_timestamp(start_time)
+                if start_ts and start_ts < now_ts - 300:
+                    continue
+
+                contests.append(
+                    {
+                        "id": contest_id,
+                        "title": title,
+                        "start_time": start_time,
+                        "end_time": end_time,
+                        "duration_seconds": duration,
+                        "url": url,
+                        "platform": label,
+                        "phase": phase,
+                    }
+                )
+        except Exception:
+            continue
+
+    contests.sort(key=lambda row: _iso_to_timestamp(row.get("start_time")))
+    last_updated = None
+    if last_updated_values:
+        last_updated = max(last_updated_values, key=_iso_to_timestamp)
+
+    return {"data": contests, "last_updated": last_updated}
