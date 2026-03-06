@@ -2800,7 +2800,6 @@ function PersonalizedContestPage({ onGoDashboard, onOpenPersonalizedSheet, onOpe
       </header>
 
       <main className="flex-1 overflow-y-auto px-4 py-6 space-y-6 pb-32">
-        <section className="contest-glass-card rounded-xl p-6 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
             <label className="text-xs text-slate-400">
               Weekday

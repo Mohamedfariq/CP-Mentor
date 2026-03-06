@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ContestScheduleManager } from "./ContestScheduleManager";
 
 const topicAccuracy = [
   { topic: "Dynamic Programming", value: 85 },
@@ -541,9 +540,6 @@ function ProblemEditorModal({ open, problem, onClose }) {
     if (!open) return;
     setLanguage("cpp23");
     setCode(starterCodeForLanguage("cpp23"));
-    setCopyStatus("");
-    setTestResults(null);
-    setRunError("");
   }, [open, problem?.problem_key, problem?.cf_link]);
 
   useEffect(() => {
@@ -852,35 +848,6 @@ function ProblemEditorModal({ open, problem, onClose }) {
               </div>
             </div>
             {copyStatus ? <p className={`mb-2 text-xs ${isDarkEditor ? "text-emerald-300" : "text-emerald-700"}`}>{copyStatus}</p> : null}
-            {runError ? <p className={`mb-2 text-xs font-semibold ${isDarkEditor ? "text-red-400" : "text-red-600"}`}>❌ {runError}</p> : null}
-            {testResults ? (
-              <div className={`mb-2 space-y-1 rounded border p-2 text-xs ${isDarkEditor ? "border-slate-700 bg-slate-950/50" : "border-slate-200 bg-slate-50"}`}>
-                <p className="font-semibold">Test Results:</p>
-                {testResults.results && testResults.results.length > 0 ? (
-                  <div className="space-y-1">
-                    {testResults.results.map((result, idx) => (
-                      <div key={`result-${idx}`} className="flex items-center gap-2">
-                        <span className={result.passed ? "text-emerald-500 font-bold" : "text-red-500 font-bold"}>
-                          {result.passed ? "✓" : "✗"}
-                        </span>
-                        <span>Test {result.test_index}: {result.passed ? "Passed" : "Failed"}</span>
-                        {!result.passed && result.expected_output ? (
-                          <div className={`ml-auto text-[10px] ${isDarkEditor ? "text-slate-400" : "text-slate-500"}`}>
-                            Expected: {result.expected_output.substring(0, 20)}...
-                          </div>
-                        ) : null}
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
-                {testResults.passed_count !== undefined && testResults.total_count !== undefined ? (
-                  <p className="mt-2 border-t border-current/20 pt-1 font-semibold">
-                    {testResults.passed_count}/{testResults.total_count} tests passed
-                    {testResults.passed_count === testResults.total_count ? " ✓" : ""}
-                  </p>
-                ) : null}
-              </div>
-            ) : null}
             <textarea
               className={`min-h-0 flex-1 resize-none rounded border p-3 font-mono text-xs leading-relaxed outline-none focus:border-primary ${inputClass}`}
               spellCheck={false}
@@ -2307,7 +2274,6 @@ function PersonalizedContestPage({ onGoDashboard, onOpenPersonalizedSheet, onOpe
   const [completeSaving, setCompleteSaving] = useState(false);
   const [editorModalOpen, setEditorModalOpen] = useState(false);
   const [editorModalProblem, setEditorModalProblem] = useState(null);
-  const [contestManagerOpen, setContestManagerOpen] = useState(false);
   const { askConfirm, confirmDialogNode } = useThemedConfirm();
   const [scheduleForm, setScheduleForm] = useState({ weekday: 1, hour: 20, minute: 0, contestDurationSeconds: 7200 });
   const [gateNowMs, setGateNowMs] = useState(() => Date.now());
@@ -2788,19 +2754,15 @@ function PersonalizedContestPage({ onGoDashboard, onOpenPersonalizedSheet, onOpe
             <span className="material-symbols-outlined text-sm">stop</span>
             End Contest
           </button>
-          <button
-            className="px-4 py-2.5 border border-slate-700 bg-slate-800/50 hover:bg-slate-800 text-white rounded-lg font-bold text-sm transition-colors"
-            onClick={() => setContestManagerOpen(true)}
-            type="button"
-            title="Manage scheduled contests"
-          >
-            <span className="material-symbols-outlined">event_note</span>
-          </button>
         </div>
       </header>
 
       <main className="flex-1 overflow-y-auto px-4 py-6 space-y-6 pb-32">
-        <section className="contest-glass-card rounded-xl p-6 space-y-4">
+        <section className="contest-glass-card rounded-xl p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-white">Weekly Automated Contest Schedule</h3>
+            <span className="text-[11px] text-slate-400">Next: {scheduledLabel}</span>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
             <label className="text-xs text-slate-400">
               Weekday
@@ -3058,11 +3020,6 @@ function PersonalizedContestPage({ onGoDashboard, onOpenPersonalizedSheet, onOpe
         open={editorModalOpen}
         problem={editorModalProblem}
         onClose={() => setEditorModalOpen(false)}
-      />
-      <ContestScheduleManager
-        open={contestManagerOpen}
-        authUser={authUser}
-        onClose={() => setContestManagerOpen(false)}
       />
       {confirmDialogNode}
 

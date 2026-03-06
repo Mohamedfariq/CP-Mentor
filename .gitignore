@@ -3,6 +3,13 @@ dist/
 .vite/
 .DS_Store
 Thumbs.db
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 .env
 .env.*
 !.env.example
@@ -10,3 +17,5 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+cf_dataset_ml/dynamic_user_feature_snapshots.csv
+cf_dataset_ml/model_training_meta.json

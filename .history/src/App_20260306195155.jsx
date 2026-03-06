@@ -2788,19 +2788,15 @@ function PersonalizedContestPage({ onGoDashboard, onOpenPersonalizedSheet, onOpe
             <span className="material-symbols-outlined text-sm">stop</span>
             End Contest
           </button>
-          <button
-            className="px-4 py-2.5 border border-slate-700 bg-slate-800/50 hover:bg-slate-800 text-white rounded-lg font-bold text-sm transition-colors"
-            onClick={() => setContestManagerOpen(true)}
-            type="button"
-            title="Manage scheduled contests"
-          >
-            <span className="material-symbols-outlined">event_note</span>
-          </button>
         </div>
       </header>
 
       <main className="flex-1 overflow-y-auto px-4 py-6 space-y-6 pb-32">
-        <section className="contest-glass-card rounded-xl p-6 space-y-4">
+        <section className="contest-glass-card rounded-xl p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-white">Weekly Automated Contest Schedule</h3>
+            <span className="text-[11px] text-slate-400">Next: {scheduledLabel}</span>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
             <label className="text-xs text-slate-400">
               Weekday
@@ -3058,11 +3054,6 @@ function PersonalizedContestPage({ onGoDashboard, onOpenPersonalizedSheet, onOpe
         open={editorModalOpen}
         problem={editorModalProblem}
         onClose={() => setEditorModalOpen(false)}
-      />
-      <ContestScheduleManager
-        open={contestManagerOpen}
-        authUser={authUser}
-        onClose={() => setContestManagerOpen(false)}
       />
       {confirmDialogNode}
 

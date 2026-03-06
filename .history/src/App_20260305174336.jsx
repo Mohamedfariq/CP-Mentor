@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ContestScheduleManager } from "./ContestScheduleManager";
 
 const topicAccuracy = [
   { topic: "Dynamic Programming", value: 85 },
@@ -137,30 +136,6 @@ const CODE_EDITOR_LANGUAGES = [
 ];
 
 const CODE_EDITOR_TEMPLATES = {
-  cpp23: `#include <bits/stdc++.h>
-using namespace std;
-
-int main() {
-    ios::sync_with_stdio(false);
-    cin.tie(nullptr);
-
-    // write solution here
-
-    return 0;
-}
-`,
-  cpp20: `#include <bits/stdc++.h>
-using namespace std;
-
-int main() {
-    ios::sync_with_stdio(false);
-    cin.tie(nullptr);
-
-    // write solution here
-
-    return 0;
-}
-`,
   cpp17: `#include <bits/stdc++.h>
 using namespace std;
 
@@ -173,13 +148,6 @@ int main() {
     return 0;
 }
 `,
-  c: `#include <stdio.h>
-
-int main() {
-    // write solution here
-    return 0;
-}
-`,
   python3: `def solve():
     # write solution here
     pass
@@ -188,7 +156,7 @@ int main() {
 if __name__ == "__main__":
     solve()
 `,
-  java: `import java.io.*;
+  java17: `import java.io.*;
 import java.util.*;
 
 public class Main {
@@ -233,44 +201,9 @@ public class Main {
     }
 }
 `,
-  go: `package main
-
-import "fmt"
-
-func main() {
-    // write solution here
-}
-`,
-  rust: `fn main() {
-    // write solution here
-}
-`,
-  javascript: `const readline = require('readline');
-
-const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-});
-
-rl.on('line', (line) => {
-    // write solution here
-});
-`,
-  kotlin: `fun main() {
-    // write solution here
-}
-`,
-  csharp: `using System;
-
-class Program {
-    static void Main() {
-        // write solution here
-    }
-}
-`,
 };
 
-const starterCodeForLanguage = (language) => CODE_EDITOR_TEMPLATES[language] || CODE_EDITOR_TEMPLATES.cpp23;
+const starterCodeForLanguage = (language) => CODE_EDITOR_TEMPLATES[language] || CODE_EDITOR_TEMPLATES.cpp17;
 
 const normalizeCodeforcesProblemUrl = (rawUrl) => {
   const value = String(rawUrl || "").trim();
@@ -522,12 +455,9 @@ function ProblemEditorModal({ open, problem, onClose }) {
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState("");
   const [editorTheme, setEditorTheme] = useState("dark");
-  const [language, setLanguage] = useState("cpp23");
-  const [code, setCode] = useState(() => starterCodeForLanguage("cpp23"));
+  const [language, setLanguage] = useState("cpp17");
+  const [code, setCode] = useState(() => starterCodeForLanguage("cpp17"));
   const [copyStatus, setCopyStatus] = useState("");
-  const [testResults, setTestResults] = useState(null);
-  const [isRunning, setIsRunning] = useState(false);
-  const [runError, setRunError] = useState("");
   const { askConfirm, confirmDialogNode } = useThemedConfirm();
 
   const cfLink = normalizeCodeforcesProblemUrl(problem?.cf_link || "");
@@ -539,11 +469,8 @@ function ProblemEditorModal({ open, problem, onClose }) {
 
   useEffect(() => {
     if (!open) return;
-    setLanguage("cpp23");
-    setCode(starterCodeForLanguage("cpp23"));
-    setCopyStatus("");
-    setTestResults(null);
-    setRunError("");
+    setLanguage("cpp17");
+    setCode(starterCodeForLanguage("cpp17"));
   }, [open, problem?.problem_key, problem?.cf_link]);
 
   useEffect(() => {
@@ -648,53 +575,6 @@ function ProblemEditorModal({ open, problem, onClose }) {
       return;
     }
     setCopyStatus("Unable to copy code. Please copy manually before submitting.");
-  };
-
-  const handleRunCode = async () => {
-    if (!code.trim()) {
-      setRunError("Code cannot be empty");
-      setTestResults(null);
-      return;
-    }
-    if (!samples || samples.length === 0) {
-      setRunError("No sample test cases available");
-      setTestResults(null);
-      return;
-    }
-
-    setIsRunning(true);
-    setRunError("");
-    setTestResults(null);
-
-    try {
-      const response = await fetch("/api/execute-code", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          code,
-          language,
-          testCases: samples.map((s) => ({
-            input: s.input || "",
-            expectedOutput: s.output || "",
-            index: s.index,
-          })),
-        }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        setRunError(data?.detail || "Failed to execute code");
-        setTestResults(null);
-        return;
-      }
-
-      setTestResults(data);
-    } catch (err) {
-      setRunError(err?.message || "Error executing code");
-      setTestResults(null);
-    } finally {
-      setIsRunning(false);
-    }
   };
 
   return (
@@ -841,46 +721,9 @@ function ProblemEditorModal({ open, problem, onClose }) {
                 >
                   Copy + Open Submit
                 </button>
-                <button
-                  className="rounded bg-emerald-600 px-2 py-1 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                  onClick={handleRunCode}
-                  type="button"
-                  disabled={isRunning}
-                >
-                  {isRunning ? "Running..." : "Run Code"}
-                </button>
               </div>
             </div>
             {copyStatus ? <p className={`mb-2 text-xs ${isDarkEditor ? "text-emerald-300" : "text-emerald-700"}`}>{copyStatus}</p> : null}
-            {runError ? <p className={`mb-2 text-xs font-semibold ${isDarkEditor ? "text-red-400" : "text-red-600"}`}>❌ {runError}</p> : null}
-            {testResults ? (
-              <div className={`mb-2 space-y-1 rounded border p-2 text-xs ${isDarkEditor ? "border-slate-700 bg-slate-950/50" : "border-slate-200 bg-slate-50"}`}>
-                <p className="font-semibold">Test Results:</p>
-                {testResults.results && testResults.results.length > 0 ? (
-                  <div className="space-y-1">
-                    {testResults.results.map((result, idx) => (
-                      <div key={`result-${idx}`} className="flex items-center gap-2">
-                        <span className={result.passed ? "text-emerald-500 font-bold" : "text-red-500 font-bold"}>
-                          {result.passed ? "✓" : "✗"}
-                        </span>
-                        <span>Test {result.test_index}: {result.passed ? "Passed" : "Failed"}</span>
-                        {!result.passed && result.expected_output ? (
-                          <div className={`ml-auto text-[10px] ${isDarkEditor ? "text-slate-400" : "text-slate-500"}`}>
-                            Expected: {result.expected_output.substring(0, 20)}...
-                          </div>
-                        ) : null}
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
-                {testResults.passed_count !== undefined && testResults.total_count !== undefined ? (
-                  <p className="mt-2 border-t border-current/20 pt-1 font-semibold">
-                    {testResults.passed_count}/{testResults.total_count} tests passed
-                    {testResults.passed_count === testResults.total_count ? " ✓" : ""}
-                  </p>
-                ) : null}
-              </div>
-            ) : null}
             <textarea
               className={`min-h-0 flex-1 resize-none rounded border p-3 font-mono text-xs leading-relaxed outline-none focus:border-primary ${inputClass}`}
               spellCheck={false}
@@ -2307,7 +2150,6 @@ function PersonalizedContestPage({ onGoDashboard, onOpenPersonalizedSheet, onOpe
   const [completeSaving, setCompleteSaving] = useState(false);
   const [editorModalOpen, setEditorModalOpen] = useState(false);
   const [editorModalProblem, setEditorModalProblem] = useState(null);
-  const [contestManagerOpen, setContestManagerOpen] = useState(false);
   const { askConfirm, confirmDialogNode } = useThemedConfirm();
   const [scheduleForm, setScheduleForm] = useState({ weekday: 1, hour: 20, minute: 0, contestDurationSeconds: 7200 });
   const [gateNowMs, setGateNowMs] = useState(() => Date.now());
@@ -2788,19 +2630,15 @@ function PersonalizedContestPage({ onGoDashboard, onOpenPersonalizedSheet, onOpe
             <span className="material-symbols-outlined text-sm">stop</span>
             End Contest
           </button>
-          <button
-            className="px-4 py-2.5 border border-slate-700 bg-slate-800/50 hover:bg-slate-800 text-white rounded-lg font-bold text-sm transition-colors"
-            onClick={() => setContestManagerOpen(true)}
-            type="button"
-            title="Manage scheduled contests"
-          >
-            <span className="material-symbols-outlined">event_note</span>
-          </button>
         </div>
       </header>
 
       <main className="flex-1 overflow-y-auto px-4 py-6 space-y-6 pb-32">
-        <section className="contest-glass-card rounded-xl p-6 space-y-4">
+        <section className="contest-glass-card rounded-xl p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-white">Weekly Automated Contest Schedule</h3>
+            <span className="text-[11px] text-slate-400">Next: {scheduledLabel}</span>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
             <label className="text-xs text-slate-400">
               Weekday
@@ -3058,11 +2896,6 @@ function PersonalizedContestPage({ onGoDashboard, onOpenPersonalizedSheet, onOpe
         open={editorModalOpen}
         problem={editorModalProblem}
         onClose={() => setEditorModalOpen(false)}
-      />
-      <ContestScheduleManager
-        open={contestManagerOpen}
-        authUser={authUser}
-        onClose={() => setContestManagerOpen(false)}
       />
       {confirmDialogNode}
 
