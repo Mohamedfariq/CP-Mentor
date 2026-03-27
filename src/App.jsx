@@ -930,7 +930,7 @@ function SignUpPage({ onGoToLogin, onAuthSuccess }) {
 
       onAuthSuccess(data?.user ?? null);
     } catch {
-      setErrorMessage("Cannot reach backend API. Start FastAPI with `python -m uvicorn api.main:app --reload --port 5000`.");
+      setErrorMessage("Cannot reach backend API. Start FastAPI with `venv\\Scripts\\python -m uvicorn api.main:app --reload --host 127.0.0.1 --port 5000`.");
     } finally {
       setIsSubmitting(false);
     }
@@ -1111,7 +1111,7 @@ function LoginPage({ onGoToSignup, onAuthSuccess }) {
 
       onAuthSuccess(data?.user ?? null);
     } catch {
-      setErrorMessage("Cannot reach backend API. Start FastAPI with `python -m uvicorn api.main:app --reload --port 5000`.");
+      setErrorMessage("Cannot reach backend API. Start FastAPI with `venv\\Scripts\\python -m uvicorn api.main:app --reload --host 127.0.0.1 --port 5000`.");
     } finally {
       setIsSubmitting(false);
     }

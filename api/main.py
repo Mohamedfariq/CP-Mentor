@@ -275,6 +275,7 @@ SCALER_FILE = DATASET_DIR / "scaler_v2.pkl"
 KMEANS_FILE = DATASET_DIR / "kmeans_v2.pkl"
 MODEL_META_FILE = DATASET_DIR / "model_training_meta.json"
 DYNAMIC_TRAINING_SNAPSHOTS_FILE = DATASET_DIR / "dynamic_user_feature_snapshots.csv"
+SCHEDULED_CONTESTS_FILE = DATASET_DIR / "scheduled_contests.json"
 
 MONGO_TRAINING_SNAPSHOTS_COLLECTION = os.getenv(
     "MONGO_TRAINING_SNAPSHOTS_COLLECTION", "training_snapshots"
@@ -378,27 +379,29 @@ def _get_db_mode() -> str:
         return _db_mode
 
 
-def get_collection():
+def _ensure_mongo_client() -> MongoClient:
     global _mongo_client
     if _mongo_client is None:
         with _mongo_client_lock:
             if _mongo_client is None:
-                mongo_uri = os.getenv("MONGO_URI", "mongodb://127.0.0.1:27017")
+                mongo_uri = os.getenv("MONGO_URI", "").strip()
+                if not mongo_uri:
+                    raise RuntimeError("MONGO_URI is not configured")
                 _mongo_client = MongoClient(mongo_uri, serverSelectionTimeoutMS=5000)
+    return _mongo_client
+
+
+def get_collection():
+    client = _ensure_mongo_client()
     db_name = os.getenv("MONGO_DB_NAME", "cp_mentor")
     collection_name = os.getenv("MONGO_COLLECTION_NAME", "user_details")
-    return _mongo_client[db_name][collection_name]
+    return client[db_name][collection_name]
 
 
 def _get_database():
-    global _mongo_client
-    if _mongo_client is None:
-        with _mongo_client_lock:
-            if _mongo_client is None:
-                mongo_uri = os.getenv("MONGO_URI", "mongodb://127.0.0.1:27017")
-                _mongo_client = MongoClient(mongo_uri, serverSelectionTimeoutMS=5000)
+    client = _ensure_mongo_client()
     db_name = os.getenv("MONGO_DB_NAME", "cp_mentor")
-    return _mongo_client[db_name]
+    return client[db_name]
 
 
 def _get_training_snapshots_collection():
@@ -597,11 +600,20 @@ def _serialize_user(doc: dict | None):
 
 
 def init_collection() -> None:
-    collection = get_collection()
+    if not os.getenv("MONGO_URI", "").strip():
+        logger.warning("MONGO_URI is not configured; using in-memory fallback")
+        _set_db_mode("memory")
+        return
+
     try:
+        collection = get_collection()
         collection.database.command("ping")
-    except Exception:
-        logger.exception("MongoDB ping failed during startup; switching to in-memory fallback")
+    except PyMongoError as exc:
+        logger.warning("MongoDB ping failed during startup (%s); using in-memory fallback", exc)
+        _set_db_mode("memory")
+        return
+    except Exception as exc:
+        logger.warning("MongoDB startup check failed (%s); using in-memory fallback", exc)
         _set_db_mode("memory")
         return
     _set_db_mode("mongo")
@@ -2353,6 +2365,129 @@ def _load_dynamic_latest_feature_vectors(cols: list[str]):
         return load_from_file()
 
 
+def _read_scheduled_contests_file():
+    if not SCHEDULED_CONTESTS_FILE.exists():
+        return []
+    try:
+        with SCHEDULED_CONTESTS_FILE.open(encoding="utf-8") as f:
+            payload = json.load(f)
+        if not isinstance(payload, list):
+            return []
+        return [item for item in payload if isinstance(item, dict)]
+    except Exception:
+        logger.exception("Failed to read scheduled contests file")
+        return []
+
+
+def _write_scheduled_contests_file(contests: list[dict]):
+    DATASET_DIR.mkdir(parents=True, exist_ok=True)
+    with SCHEDULED_CONTESTS_FILE.open("w", encoding="utf-8") as f:
+        json.dump(contests, f, indent=2, sort_keys=True)
+
+
+def _list_scheduled_contests(codeforces_id: str):
+    cf_id = codeforces_id.strip().lower()
+
+    def mongo_list():
+        contests_collection = _get_database()["contests_scheduled"]
+        return list(contests_collection.find({"codeforces_id": cf_id}).sort("scheduled_at", -1))
+
+    def file_list():
+        contests = [item for item in _read_scheduled_contests_file() if item.get("codeforces_id") == cf_id]
+        contests.sort(key=lambda item: _to_int(item.get("scheduled_at"), fallback=0), reverse=True)
+        return contests
+
+    return _db_read_with_fallback("list_scheduled_contests", mongo_list, file_list)
+
+
+def _get_scheduled_contest(contest_id: str, codeforces_id: str):
+    contest_key = contest_id.strip()
+    cf_id = codeforces_id.strip().lower()
+
+    def mongo_get():
+        contests_collection = _get_database()["contests_scheduled"]
+        return contests_collection.find_one({"_id": contest_key, "codeforces_id": cf_id})
+
+    def file_get():
+        for contest in _read_scheduled_contests_file():
+            if contest.get("_id") == contest_key and contest.get("codeforces_id") == cf_id:
+                return copy.deepcopy(contest)
+        return None
+
+    return _db_read_with_fallback("get_scheduled_contest", mongo_get, file_get)
+
+
+def _create_scheduled_contest(contest_doc: dict):
+    item = copy.deepcopy(contest_doc)
+    contest_key = str(item.get("_id") or "").strip()
+
+    def mongo_create():
+        contests_collection = _get_database()["contests_scheduled"]
+        contests_collection.insert_one(item)
+        return copy.deepcopy(item)
+
+    def file_create():
+        contests = _read_scheduled_contests_file()
+        contests = [contest for contest in contests if str(contest.get("_id") or "") != contest_key]
+        contests.append(item)
+        _write_scheduled_contests_file(contests)
+        return copy.deepcopy(item)
+
+    return _db_write_with_fallback("create_scheduled_contest", mongo_create, file_create)
+
+
+def _update_scheduled_contest(contest_id: str, codeforces_id: str, update_data: dict):
+    contest_key = contest_id.strip()
+    cf_id = codeforces_id.strip().lower()
+    payload = dict(update_data or {})
+
+    def mongo_update():
+        contests_collection = _get_database()["contests_scheduled"]
+        contests_collection.update_one({"_id": contest_key, "codeforces_id": cf_id}, {"$set": payload})
+        return contests_collection.find_one({"_id": contest_key, "codeforces_id": cf_id})
+
+    def file_update():
+        contests = _read_scheduled_contests_file()
+        updated = None
+        for idx, contest in enumerate(contests):
+            if contest.get("_id") == contest_key and contest.get("codeforces_id") == cf_id:
+                merged = copy.deepcopy(contest)
+                merged.update(payload)
+                contests[idx] = merged
+                updated = merged
+                break
+        if updated is None:
+            return None
+        _write_scheduled_contests_file(contests)
+        return copy.deepcopy(updated)
+
+    return _db_write_with_fallback("update_scheduled_contest", mongo_update, file_update)
+
+
+def _delete_scheduled_contest(contest_id: str, codeforces_id: str):
+    contest_key = contest_id.strip()
+    cf_id = codeforces_id.strip().lower()
+
+    def mongo_delete():
+        contests_collection = _get_database()["contests_scheduled"]
+        result = contests_collection.delete_one({"_id": contest_key, "codeforces_id": cf_id})
+        return result.deleted_count
+
+    def file_delete():
+        contests = _read_scheduled_contests_file()
+        kept = [
+            contest
+            for contest in contests
+            if not (contest.get("_id") == contest_key and contest.get("codeforces_id") == cf_id)
+        ]
+        deleted_count = len(contests) - len(kept)
+        if deleted_count:
+            _write_scheduled_contests_file(kept)
+        return deleted_count
+
+    return _db_write_with_fallback("delete_scheduled_contest", mongo_delete, file_delete)
+
+
 def _load_base_feature_vector_map(cols: list[str]):
     topic_rows_by_user = _load_user_topic_rows()
     rating_map = _load_user_rating_map()
@@ -3028,9 +3163,13 @@ def weak_topic_recommendations(payload: RecommendationsPayload):
         reverse=True,
     )
 
-    attempted_problem_keys, solved_problem_keys_live = _load_user_problem_status_sets(
-        codeforces_id, use_cache=not payload.forceRefresh
-    )
+    try:
+        attempted_problem_keys, solved_problem_keys_live = _load_user_problem_status_sets(
+            codeforces_id, use_cache=not payload.forceRefresh
+        )
+    except Exception:
+        logger.exception("Problem status fetch failed for '%s'; continuing without live attempt markers", codeforces_id)
+        attempted_problem_keys, solved_problem_keys_live = set(), set()
     solved_problem_keys = solved_problem_keys.union(solved_problem_keys_live)
 
     topic_progress = []
@@ -3239,7 +3378,11 @@ def generate_weekly_contest(payload: ContestGeneratePayload):
         raise HTTPException(status_code=503, detail=str(exc))
     _record_cluster_state(codeforces_id, cluster, "contest_generation_7d_window", topic_rows, rating)
 
-    attempted_keys, _ = _load_user_problem_status_sets(codeforces_id, use_cache=True)
+    try:
+        attempted_keys, _ = _load_user_problem_status_sets(codeforces_id, use_cache=True)
+    except Exception:
+        logger.exception("Contest generation status fetch failed for '%s'; continuing without attempted-key filter", codeforces_id)
+        attempted_keys = set()
     topic_rows_sorted = sorted(topic_rows, key=_compute_weakness, reverse=True)
     selected_topics = []
     for row in topic_rows_sorted:
@@ -3827,7 +3970,6 @@ def create_contest(payload: CreateContestPayload):
     topics = [t for t in topics if t]
 
     try:
-        contests_collection = _get_database()["contests_scheduled"]
         contest_id = f"contest_{codeforces_id}_{int(time.time() * 1000)}"
 
         contest_doc = {
@@ -3843,7 +3985,7 @@ def create_contest(payload: CreateContestPayload):
             "completed_at": None,
         }
 
-        contests_collection.insert_one(contest_doc)
+        _create_scheduled_contest(contest_doc)
 
         return {
             "contest_id": contest_id,
@@ -3854,8 +3996,6 @@ def create_contest(payload: CreateContestPayload):
             "status": "pending",
             "message": "Contest created successfully",
         }
-    except PyMongoError as e:
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
     except HTTPException:
         raise
     except Exception as e:
@@ -3870,10 +4010,8 @@ def list_contests(payload: GetContestsPayload):
         raise HTTPException(status_code=400, detail="codeforcesId is required")
 
     try:
-        contests_collection = _get_database()["contests_scheduled"]
         now_ts = int(time.time())
-
-        contests = list(contests_collection.find({"codeforces_id": codeforces_id}).sort("scheduled_at", -1))
+        contests = _list_scheduled_contests(codeforces_id)
 
         formatted_contests = []
         for contest in contests:
@@ -3893,8 +4031,6 @@ def list_contests(payload: GetContestsPayload):
             formatted_contests.append(contest_doc)
 
         return {"contests": formatted_contests, "count": len(formatted_contests)}
-    except PyMongoError as e:
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to list contests: {str(e)}")
 
@@ -3908,8 +4044,7 @@ def update_contest(payload: UpdateContestPayload):
         raise HTTPException(status_code=400, detail="contestId and codeforcesId are required")
 
     try:
-        contests_collection = _get_database()["contests_scheduled"]
-        contest = contests_collection.find_one({"_id": contest_id, "codeforces_id": codeforces_id})
+        contest = _get_scheduled_contest(contest_id, codeforces_id)
 
         if not contest:
             raise HTTPException(status_code=404, detail="Contest not found")
@@ -3935,9 +4070,9 @@ def update_contest(payload: UpdateContestPayload):
         if not update_data:
             raise HTTPException(status_code=400, detail="No valid fields to update")
 
-        contests_collection.update_one({"_id": contest_id}, {"$set": update_data})
-
-        updated_contest = contests_collection.find_one({"_id": contest_id})
+        updated_contest = _update_scheduled_contest(contest_id, codeforces_id, update_data)
+        if not updated_contest:
+            raise HTTPException(status_code=404, detail="Contest not found")
         return {
             "contest_id": updated_contest["_id"],
             "scheduled_at": updated_contest["scheduled_at"],
@@ -3947,8 +4082,6 @@ def update_contest(payload: UpdateContestPayload):
         }
     except HTTPException:
         raise
-    except PyMongoError as e:
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to update contest: {str(e)}")
 
@@ -3962,17 +4095,13 @@ def delete_contest(payload: DeleteContestPayload):
         raise HTTPException(status_code=400, detail="contestId and codeforcesId are required")
 
     try:
-        contests_collection = _get_database()["contests_scheduled"]
-        result = contests_collection.delete_one({"_id": contest_id, "codeforces_id": codeforces_id})
-
-        if result.deleted_count == 0:
+        deleted_count = _delete_scheduled_contest(contest_id, codeforces_id)
+        if deleted_count == 0:
             raise HTTPException(status_code=404, detail="Contest not found")
 
         return {"contest_id": contest_id, "message": "Contest deleted successfully"}
     except HTTPException:
         raise
-    except PyMongoError as e:
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to delete contest: {str(e)}")
 
@@ -3986,8 +4115,7 @@ def start_contest(payload: StartContestPayload):
         raise HTTPException(status_code=400, detail="contestId and codeforcesId are required")
 
     try:
-        contests_collection = _get_database()["contests_scheduled"]
-        contest = contests_collection.find_one({"_id": contest_id, "codeforces_id": codeforces_id})
+        contest = _get_scheduled_contest(contest_id, codeforces_id)
 
         if not contest:
             raise HTTPException(status_code=404, detail="Contest not found")
@@ -4030,18 +4158,17 @@ def start_contest(payload: StartContestPayload):
         if not problems:
             raise HTTPException(status_code=400, detail="Could not generate contest problems for selected topics")
 
-        contests_collection.update_one(
-            {"_id": contest_id},
+        updated = _update_scheduled_contest(
+            contest_id,
+            codeforces_id,
             {
-                "$set": {
-                    "status": "running",
-                    "started_at": now_ts,
-                    "problems": [{"problem_key": p.get("problem_key", ""), "topic": p.get("topic", "")} for p in problems[:4]],
-                }
+                "status": "running",
+                "started_at": now_ts,
+                "problems": [{"problem_key": p.get("problem_key", ""), "topic": p.get("topic", "")} for p in problems[:4]],
             },
         )
-
-        updated = contests_collection.find_one({"_id": contest_id})
+        if not updated:
+            raise HTTPException(status_code=404, detail="Contest not found")
         return {
             "contest_id": contest_id,
             "status": "running",
@@ -4052,8 +4179,6 @@ def start_contest(payload: StartContestPayload):
         }
     except HTTPException:
         raise
-    except PyMongoError as e:
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to start contest: {str(e)}")
 
@@ -4061,10 +4186,14 @@ def start_contest(payload: StartContestPayload):
 def _get_problems_for_topic(codeforces_id: str, topic: str, limit: int = 4) -> list[dict]:
     """Get problems for a specific topic (from weak topics recommendation logic)"""
     try:
-        recommended = _call_endpoint_with_cache(
-            "/api/recommendations/weak-topics",
-            payload={"codeforcesId": codeforces_id, "selectedTopics": [topic], "problemCount": limit},
+        recommended = weak_topic_recommendations(
+            RecommendationsPayload(
+                codeforcesId=codeforces_id,
+                selectedTopics=[topic],
+                perTopic=limit,
+                totalProblems=limit,
+            )
         )
-        return recommended.get("recommendations", [])
+        return list(recommended.get("problems") or [])
     except Exception:
         return []

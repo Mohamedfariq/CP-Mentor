@@ -1,0 +1,4 @@
+INFO:     Started server process [24664]
+INFO:     Waiting for application startup.
+MongoDB ping failed during startup (The resolution lifetime expired after 21.615 seconds: Server Do53:10.10.10.101@53 answered The DNS operation timed out.; Server Do53:10.10.10.100@53 answered The DNS operation timed out.; Server Do53:10.10.10.101@53 answered The DNS operation timed out.; Server Do53:10.10.10.100@53 answered The DNS operation timed out.; Server Do53:10.10.10.101@53 answered The DNS operation timed out.; Server Do53:10.10.10.100@53 answered The DNS operation timed out.; Server Do53:10.10.10.101@53 answered The DNS operation timed out.; Server Do53:10.10.10.100@53 answered The DNS operation timed out.; Server Do53:10.10.10.101@53 answered The DNS operation timed out.; Server Do53:10.10.10.100@53 answered The DNS operation timed out.); using in-memory fallback
+Database mode switched from 'mongo' to 'memory'
