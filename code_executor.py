@@ -1,6 +1,7 @@
 """Code execution module for handling multiple programming languages."""
 
 import os
+import shutil
 import subprocess
 import tempfile
 from pathlib import Path
@@ -72,6 +73,44 @@ class CodeExecutor:
     }
 
     @staticmethod
+    def _resolve_runtime_command(binary: str) -> str:
+        """Resolve a runtime/compiler binary in a Windows-friendly way."""
+        candidates = [binary]
+        if binary == "python3":
+            candidates = ["python3", "python"]
+        elif binary == "g++":
+            candidates = ["g++", "c++"]
+
+        for candidate in candidates:
+            resolved = shutil.which(candidate)
+            if resolved:
+                return resolved
+        return binary
+
+    @staticmethod
+    def _resolve_output_path(output_file: Path) -> Path:
+        """Use a platform-appropriate executable name."""
+        if os.name == "nt":
+            return output_file.with_suffix(".exe")
+        return output_file
+
+    @staticmethod
+    def _prepare_command(args: list[str], source_file: Path, output_file: Path, work_dir: str) -> list[str]:
+        resolved_output = CodeExecutor._resolve_output_path(output_file)
+        cmd = [
+            arg.format(
+                source=str(source_file),
+                output=str(resolved_output),
+                work_dir=work_dir,
+                project_root=str(PROJECT_ROOT),
+            )
+            for arg in args
+        ]
+        if cmd:
+            cmd[0] = CodeExecutor._resolve_runtime_command(cmd[0])
+        return cmd
+
+    @staticmethod
     def execute(code: str, language: str, test_cases: list, timeout: int = 4) -> dict:
         """
         Execute code with test cases.
@@ -103,16 +142,12 @@ class CodeExecutor:
                 source_file = work_path / f"solution{config['extension']}"
             
             output_file = work_path / "solution"
-
             # Write source code
             source_file.write_text(code)
 
             # Compile if needed
             if config["compile"]:
-                compile_cmd = [
-                    arg.format(source=str(source_file), output=str(output_file), work_dir=work_dir, project_root=str(PROJECT_ROOT))
-                    for arg in config["compile"]
-                ]
+                compile_cmd = CodeExecutor._prepare_command(config["compile"], source_file, output_file, work_dir)
                 try:
                     result = subprocess.run(
                         compile_cmd,
@@ -126,6 +161,8 @@ class CodeExecutor:
                         return {"error": f"Compilation error: {error_msg[:200]}"}
                 except subprocess.TimeoutExpired:
                     return {"error": "Compilation timeout"}
+                except FileNotFoundError as e:
+                    return {"error": f"Required compiler/runtime not found: {compile_cmd[0]}"}
                 except Exception as e:
                     return {"error": f"Compilation error: {str(e)[:200]}"}
 
@@ -139,10 +176,7 @@ class CodeExecutor:
                     expected_output = test_case.get("expectedOutput", "").strip()
                     test_index = test_case.get("index", len(results) + 1)
 
-                    run_cmd = [
-                        arg.format(source=str(source_file), output=str(output_file), work_dir=work_dir, project_root=str(PROJECT_ROOT))
-                        for arg in config["run"]
-                    ]
+                    run_cmd = CodeExecutor._prepare_command(config["run"], source_file, output_file, work_dir)
 
                     result = subprocess.run(
                         run_cmd,
@@ -175,6 +209,15 @@ class CodeExecutor:
                             "passed": False,
                             "expected_output": test_case.get("expectedOutput", ""),
                             "actual_output": "Time Limit Exceeded",
+                        }
+                    )
+                except FileNotFoundError as e:
+                    results.append(
+                        {
+                            "test_index": test_case.get("index", len(results) + 1),
+                            "passed": False,
+                            "expected_output": test_case.get("expectedOutput", ""),
+                            "actual_output": f"Runtime Error: required runtime not found ({run_cmd[0]})",
                         }
                     )
                 except Exception as e:

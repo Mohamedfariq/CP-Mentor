@@ -1368,6 +1368,41 @@ def _normalize_submission_url(submission_url: str):
     return normalized
 
 
+def _submission_source_candidate_urls(submission_url: str) -> list[tuple[str, str]]:
+    normalized = _normalize_submission_url(submission_url)
+    candidates: list[tuple[str, str]] = [(normalized, "https://codeforces.com/")]
+    seen = {normalized}
+
+    submission_match = CODEFORCES_SUBMISSION_LINK_RE.match(normalized)
+    contest_id = submission_match.group("contest_id") if submission_match else None
+    submission_id = submission_match.group("submission_id") if submission_match else None
+    problemset_id = submission_match.group("problemset_id") if submission_match else None
+    problemset_submission_id = submission_match.group("problemset_submission_id") if submission_match else None
+
+    if contest_id and submission_id and "/contest/" in normalized:
+        fallback = f"https://codeforces.com/problemset/submission/{contest_id}/{submission_id}"
+        if fallback not in seen:
+            candidates.append((fallback, "https://codeforces.com/problemset"))
+            seen.add(fallback)
+
+    if problemset_id and problemset_submission_id and "/problemset/" in normalized:
+        fallback = f"https://codeforces.com/contest/{problemset_id}/submission/{problemset_submission_id}"
+        if fallback not in seen:
+            candidates.append((fallback, "https://codeforces.com/"))
+            seen.add(fallback)
+
+    mirror_candidates = []
+    for candidate_url, referer in candidates:
+        mirror_url = candidate_url.replace("https://codeforces.com/", "https://mirror.codeforces.com/")
+        if mirror_url not in seen:
+            mirror_referer = referer.replace("https://codeforces.com", "https://mirror.codeforces.com")
+            mirror_candidates.append((mirror_url, mirror_referer))
+            seen.add(mirror_url)
+
+    candidates.extend(mirror_candidates)
+    return candidates
+
+
 def _derive_problem_submit_url(problem_url: str):
     parsed = urlparse(problem_url)
     path = (parsed.path or "").rstrip("/")
@@ -3749,47 +3784,51 @@ def problem_details(payload: ProblemDetailsPayload):
 @app.post("/api/submission/source")
 def submission_source(payload: SubmissionSourcePayload):
     try:
-        url = _normalize_submission_url(payload.submissionUrl)
+        candidate_urls = _submission_source_candidate_urls(payload.submissionUrl)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 
-    try:
-        page_html = _fetch_codeforces_page_html(
-            url,
-            referer="https://codeforces.com/",
-            timeout=20,
+    parsed = {}
+    resolved_url = candidate_urls[0][0]
+    last_fetch_exc = None
+    saw_auth_required = False
+    saw_source_unavailable = False
+
+    for candidate_url, referer in candidate_urls:
+        try:
+            page_html = _fetch_codeforces_page_html(
+                candidate_url,
+                referer=referer,
+                timeout=20,
+            )
+        except Exception as exc:
+            last_fetch_exc = exc
+            logger.warning("Submission source fetch failed for %s: %s", candidate_url, exc)
+            continue
+
+        candidate_parsed = _extract_submission_source_from_html(page_html)
+        if candidate_parsed.get("code"):
+            parsed = candidate_parsed
+            resolved_url = candidate_url
+            last_fetch_exc = None
+            break
+
+        resolved_url = candidate_url
+        parsed = candidate_parsed
+        saw_auth_required = saw_auth_required or bool(candidate_parsed.get("auth_required"))
+        saw_source_unavailable = saw_source_unavailable or bool(
+            candidate_parsed.get("source_unavailable")
         )
-    except Exception as exc:
-        logger.exception("Failed to fetch submission page: %s", url)
+
+    if not parsed.get("code") and last_fetch_exc is not None and not (saw_auth_required or saw_source_unavailable):
+        logger.exception("Failed to fetch submission page from all candidates: %s", payload.submissionUrl)
         detail = "Failed to fetch submission page from Codeforces"
-        if isinstance(exc, HTTPError):
-            detail = f"Failed to fetch submission page from Codeforces (HTTP {exc.code})"
+        if isinstance(last_fetch_exc, HTTPError):
+            detail = f"Failed to fetch submission page from Codeforces (HTTP {last_fetch_exc.code})"
         raise HTTPException(status_code=502, detail=detail)
 
-    parsed = _extract_submission_source_from_html(page_html)
-
-    # Fallback: some pages expose source under /problemset/submission even when /contest/submission fails.
     if not parsed.get("code"):
-        submission_match = CODEFORCES_SUBMISSION_LINK_RE.match(url)
-        contest_id = submission_match.group("contest_id") if submission_match else None
-        submission_id = submission_match.group("submission_id") if submission_match else None
-        if contest_id and submission_id and "/contest/" in url:
-            fallback_url = f"https://codeforces.com/problemset/submission/{contest_id}/{submission_id}"
-            try:
-                fallback_html = _fetch_codeforces_page_html(
-                    fallback_url,
-                    referer="https://codeforces.com/problemset",
-                    timeout=20,
-                )
-                fallback_parsed = _extract_submission_source_from_html(fallback_html)
-                if fallback_parsed.get("code"):
-                    url = fallback_url
-                    parsed = fallback_parsed
-            except Exception:
-                logger.exception("Fallback submission source fetch failed: %s", fallback_url)
-
-    if not parsed.get("code"):
-        if parsed.get("auth_required"):
+        if parsed.get("auth_required") or saw_auth_required:
             raise HTTPException(
                 status_code=403,
                 detail=(
@@ -3797,7 +3836,7 @@ def submission_source(payload: SubmissionSourcePayload):
                     "Set CODEFORCES_COOKIE in backend .env to fetch private submission source."
                 ),
             )
-        if parsed.get("source_unavailable"):
+        if parsed.get("source_unavailable") or saw_source_unavailable:
             raise HTTPException(
                 status_code=404,
                 detail="Codeforces does not expose source code for this submission.",
@@ -3825,7 +3864,7 @@ def submission_source(payload: SubmissionSourcePayload):
         )
 
     return {
-        "submission_url": url,
+        "submission_url": resolved_url,
         "language": parsed.get("language") or "",
         "verdict": parsed.get("verdict") or "",
         "code": parsed.get("code") or "",

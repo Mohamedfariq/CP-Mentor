@@ -698,8 +698,8 @@ function ProblemEditorModal({ open, problem, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/45 p-2 sm:p-4 backdrop-blur-sm">
-      <div className={`flex h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-[24px] border shadow-[0_24px_70px_rgba(15,23,42,0.22)] ${panelClass}`}>
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/45 p-0 backdrop-blur-sm">
+      <div className={`flex h-[100dvh] w-full flex-col overflow-hidden border shadow-[0_24px_70px_rgba(15,23,42,0.22)] ${panelClass}`}>
         <div className="flex items-center justify-between gap-3 border-b border-current/10 px-4 py-3 sm:px-5">
           <div>
             <h3 className="font-display text-sm font-bold sm:text-base">{title}</h3>
@@ -728,7 +728,7 @@ function ProblemEditorModal({ open, problem, onClose }) {
           </div>
         </div>
 
-        <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 p-3 lg:grid-cols-[1.05fr_0.95fr] lg:gap-4 lg:p-4">
+        <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 p-3 lg:grid-cols-[1.02fr_1fr] lg:gap-4 lg:p-4">
           <section className={`min-h-0 overflow-y-auto rounded-[20px] border p-4 text-sm shadow-sm ${cardClass}`}>
             {loading ? <p className={isDarkEditor ? "text-slate-300" : "text-slate-600"}>Loading problem statement...</p> : null}
             {fetchError ? <p className={`text-sm ${isDarkEditor ? "text-red-400" : "text-red-500"}`}>{fetchError}</p> : null}
@@ -803,90 +803,115 @@ function ProblemEditorModal({ open, problem, onClose }) {
             ) : null}
           </section>
 
-          <section className={`flex min-h-0 flex-col rounded-[20px] border p-4 shadow-sm ${cardClass}`}>
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-              <label className={`text-[11px] font-semibold ${isDarkEditor ? "text-slate-300" : "text-slate-700"}`}>
-                Language
-                <select
-                  className={`ml-2 rounded-xl border px-3 py-1.5 text-[11px] ${inputClass}`}
-                  value={language}
-                  onChange={(e) => handleLanguageChange(e.target.value)}
-                >
-                  {CODE_EDITOR_LANGUAGES.map((item) => (
-                    <option key={item.value} value={item.value}>
-                      {item.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  className={`${isDarkEditor ? "bg-slate-700 hover:bg-slate-600" : "bg-slate-900 hover:bg-slate-800"} rounded-xl px-3 py-1.5 text-[11px] font-semibold text-white`}
-                  onClick={handleCopyCode}
-                  type="button"
-                >
-                  Copy Code
-                </button>
-                <button
-                  className="rounded-xl border border-primary px-3 py-1.5 text-[11px] font-semibold text-primary hover:bg-primary/10"
-                  onClick={handleOpenSubmit}
-                  type="button"
-                >
-                  Open CF Submit
-                </button>
-                <button
-                  className="rounded-xl bg-primary px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-primary/90"
-                  onClick={handleCopyAndOpenSubmit}
-                  type="button"
-                >
-                  Copy + Open Submit
-                </button>
-                <button
-                  className="rounded-xl bg-emerald-600 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
-                  onClick={handleRunCode}
-                  type="button"
-                  disabled={isRunning}
-                >
-                  {isRunning ? "Running..." : "Run Code"}
-                </button>
+          <section className="grid min-h-0 grid-rows-[minmax(0,1fr)_minmax(220px,0.78fr)] gap-3">
+            <div className={`flex min-h-0 flex-col rounded-[20px] border p-4 shadow-sm ${cardClass}`}>
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <label className={`text-[11px] font-semibold ${isDarkEditor ? "text-slate-300" : "text-slate-700"}`}>
+                  Language
+                  <select
+                    className={`ml-2 rounded-xl border px-3 py-1.5 text-[11px] ${inputClass}`}
+                    value={language}
+                    onChange={(e) => handleLanguageChange(e.target.value)}
+                  >
+                    {CODE_EDITOR_LANGUAGES.map((item) => (
+                      <option key={item.value} value={item.value}>
+                        {item.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    className={`${isDarkEditor ? "bg-slate-700 hover:bg-slate-600" : "bg-slate-900 hover:bg-slate-800"} rounded-xl px-3 py-1.5 text-[11px] font-semibold text-white`}
+                    onClick={handleCopyCode}
+                    type="button"
+                  >
+                    Copy Code
+                  </button>
+                  <button
+                    className="rounded-xl border border-primary px-3 py-1.5 text-[11px] font-semibold text-primary hover:bg-primary/10"
+                    onClick={handleOpenSubmit}
+                    type="button"
+                  >
+                    Open CF Submit
+                  </button>
+                  <button
+                    className="rounded-xl bg-primary px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-primary/90"
+                    onClick={handleCopyAndOpenSubmit}
+                    type="button"
+                  >
+                    Copy + Open Submit
+                  </button>
+                  <button
+                    className="rounded-xl bg-emerald-600 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    onClick={handleRunCode}
+                    type="button"
+                    disabled={isRunning}
+                  >
+                    {isRunning ? "Running..." : "Run Code"}
+                  </button>
+                </div>
               </div>
+              {copyStatus ? <p className={`mb-2 text-xs ${isDarkEditor ? "text-emerald-300" : "text-emerald-700"}`}>{copyStatus}</p> : null}
+              {runError ? <p className={`mb-2 text-xs font-semibold ${isDarkEditor ? "text-red-400" : "text-red-600"}`}>Error: {runError}</p> : null}
+              <textarea
+                className={`min-h-0 flex-1 resize-none rounded-[18px] border p-3 font-mono text-xs leading-relaxed outline-none focus:border-primary ${inputClass}`}
+                spellCheck={false}
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+              />
             </div>
-            {copyStatus ? <p className={`mb-2 text-xs ${isDarkEditor ? "text-emerald-300" : "text-emerald-700"}`}>{copyStatus}</p> : null}
-            {runError ? <p className={`mb-2 text-xs font-semibold ${isDarkEditor ? "text-red-400" : "text-red-600"}`}>Error: {runError}</p> : null}
-            {testResults ? (
-              <div className={`mb-3 space-y-1 rounded-2xl border p-3 text-xs ${isDarkEditor ? "border-slate-700 bg-slate-950/50" : "border-slate-200 bg-slate-50"}`}>
-                <p className="font-semibold">Test Results</p>
-                {testResults.results && testResults.results.length > 0 ? (
-                  <div className="space-y-1">
-                    {testResults.results.map((result, idx) => (
-                      <div key={`result-${idx}`} className="flex items-center gap-2">
-                        <span className={result.passed ? "text-emerald-500 font-bold" : "text-red-500 font-bold"}>
-                          {result.passed ? "PASS" : "FAIL"}
-                        </span>
-                        <span>Test {result.test_index}: {result.passed ? "Passed" : "Failed"}</span>
-                        {!result.passed && result.expected_output ? (
-                          <div className={`ml-auto text-[10px] ${isDarkEditor ? "text-slate-400" : "text-slate-500"}`}>
-                            Expected: {result.expected_output.substring(0, 20)}...
+
+            <div className={`min-h-0 overflow-y-auto rounded-[20px] border p-4 shadow-sm ${cardClass}`}>
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <h4 className="font-display text-sm font-bold">Testcases</h4>
+                {testResults?.passed_count !== undefined && testResults?.total_count !== undefined ? (
+                  <span className={`rounded-full px-3 py-1 text-[10px] font-bold ${isDarkEditor ? "bg-slate-800 text-slate-200" : "bg-slate-100 text-slate-700"}`}>
+                    {testResults.passed_count}/{testResults.total_count} passed
+                  </span>
+                ) : null}
+              </div>
+
+              {samples.length > 0 ? (
+                <div className="space-y-3">
+                  {samples.map((sample) => {
+                    const matchingResult = Array.isArray(testResults?.results)
+                      ? testResults.results.find((result) => String(result.test_index) === String(sample.index))
+                      : null;
+                    return (
+                      <div className={`rounded-2xl border p-3 ${isDarkEditor ? "border-slate-700 bg-slate-950/70" : "border-slate-200 bg-slate-50"}`} key={sample.index}>
+                        <div className="mb-2 flex items-center justify-between gap-2">
+                          <p className={`text-[11px] font-semibold ${isDarkEditor ? "text-slate-300" : "text-slate-600"}`}>Sample {sample.index}</p>
+                          {matchingResult ? (
+                            <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${matchingResult.passed ? "status-solved" : "status-attempted"}`}>
+                              {matchingResult.passed ? "PASS" : "FAIL"}
+                            </span>
+                          ) : null}
+                        </div>
+                        <div className="grid gap-2 lg:grid-cols-2">
+                          <div>
+                            <p className={`mb-1 text-[10px] uppercase tracking-wide ${isDarkEditor ? "text-slate-400" : "text-slate-500"}`}>Input</p>
+                            <pre className={`whitespace-pre-wrap text-[11px] ${isDarkEditor ? "text-slate-200" : "text-slate-700"}`}>{sample.input || "-"}</pre>
+                          </div>
+                          <div>
+                            <p className={`mb-1 text-[10px] uppercase tracking-wide ${isDarkEditor ? "text-slate-400" : "text-slate-500"}`}>Expected</p>
+                            <pre className={`whitespace-pre-wrap text-[11px] ${isDarkEditor ? "text-slate-200" : "text-slate-700"}`}>{sample.output || "-"}</pre>
+                          </div>
+                        </div>
+                        {matchingResult && !matchingResult.passed ? (
+                          <div className="mt-2">
+                            <p className={`mb-1 text-[10px] uppercase tracking-wide ${isDarkEditor ? "text-slate-400" : "text-slate-500"}`}>Actual</p>
+                            <pre className={`whitespace-pre-wrap text-[11px] ${isDarkEditor ? "text-red-300" : "text-red-600"}`}>{matchingResult.actual_output || matchingResult.stdout || "-"}</pre>
                           </div>
                         ) : null}
                       </div>
-                    ))}
-                  </div>
-                ) : null}
-                {testResults.passed_count !== undefined && testResults.total_count !== undefined ? (
-                  <p className="mt-2 border-t border-current/20 pt-1 font-semibold">
-                    {testResults.passed_count}/{testResults.total_count} tests passed
-                    {testResults.passed_count === testResults.total_count ? " - all passing" : ""}
-                  </p>
-                ) : null}
-              </div>
-            ) : null}
-            <textarea
-              className={`min-h-0 flex-1 resize-none rounded-[18px] border p-3 font-mono text-xs leading-relaxed outline-none focus:border-primary ${inputClass}`}
-              spellCheck={false}
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-            />
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className={isDarkEditor ? "text-slate-400" : "text-slate-500"}>No sample test cases available.</p>
+              )}
+            </div>
           </section>
         </div>
         {confirmDialogNode}
@@ -937,36 +962,50 @@ function SignUpPage({ onGoToLogin, onAuthSuccess }) {
   };
 
   return (
-    <div
-      className="bg-background-light dark:bg-background-dark flex flex-col items-center justify-center p-4 relative overflow-hidden"
-      style={{ minHeight: "max(884px, 100dvh)" }}
-    >
-      <div className="absolute top-[-10%] left-[-10%] w-[400px] h-[400px] bg-glow-blue pointer-events-none"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] bg-glow-purple pointer-events-none"></div>
+    <div className="min-h-screen bg-[#f4f6fb] text-slate-900">
+      <div className="mx-auto flex min-h-screen max-w-6xl items-center justify-center px-4 py-10 md:px-6">
+        <div className="grid w-full items-center gap-8 lg:grid-cols-[1.05fr_0.95fr]">
+          <section className="hidden rounded-[28px] bg-[#2d3133] p-8 text-white shadow-2xl lg:block">
+            <div className="mb-10 flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-accent-purple shadow-[0_10px_22px_rgba(57,44,193,0.35)]">
+                <span className="material-symbols-outlined filled-icon text-white">insights</span>
+              </div>
+              <div>
+                <h1 className="font-display text-xl font-bold tracking-tight text-[#c8c5ff]">CP Mentor</h1>
+                <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500">Elite Logic</p>
+              </div>
+            </div>
+            <h2 className="font-display text-4xl font-black leading-tight">Build your competitive workspace.</h2>
+            <p className="mt-4 max-w-md text-sm leading-relaxed text-slate-300">
+              Create your account, connect your Codeforces handle, and get a personalized dashboard, practice sheet, and contest plan in one place.
+            </p>
+            <div className="mt-8 space-y-3">
+              <div className="rounded-[18px] bg-white/5 px-4 py-3 text-sm text-slate-200">Track weak topics with focused recommendations.</div>
+              <div className="rounded-[18px] bg-white/5 px-4 py-3 text-sm text-slate-200">Schedule weekly contests and review recent submissions.</div>
+              <div className="rounded-[18px] bg-white/5 px-4 py-3 text-sm text-slate-200">Keep your Codeforces profile and progress synced.</div>
+            </div>
+          </section>
 
-      <div className="w-full max-w-md z-10">
-        <div className="flex flex-col items-center mb-8">
-          <div className="bg-primary/20 p-3 rounded-xl mb-3 border border-primary/30">
-            <span className="material-symbols-outlined text-primary text-3xl">terminal</span>
-          </div>
-          <h1 className="text-white text-2xl font-bold tracking-tight font-display">CP Mentor</h1>
-          <p className="text-slate-400 text-sm mt-1">Join the developer leaderboard</p>
-        </div>
-
-        <div className="glass-card rounded-xl p-6 md:p-8 shadow-2xl">
-          <h2 className="text-white text-xl font-semibold mb-6">Create Your Account</h2>
-          <form
-            className="space-y-5"
-            onSubmit={handleSignUp}
-          >
+          <section className="rounded-[28px] bg-white/90 p-6 shadow-[0_20px_60px_rgba(148,163,184,0.18)] ring-1 ring-white/70 sm:p-8">
+            <div className="mb-8 text-center lg:text-left">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-accent-purple shadow-[0_10px_22px_rgba(57,44,193,0.25)] lg:mx-0">
+                <span className="material-symbols-outlined text-white">person_add</span>
+              </div>
+              <h2 className="font-display text-3xl font-black tracking-tight text-slate-950">Create Your Account</h2>
+              <p className="mt-2 text-sm text-slate-500">Use the same CP Mentor workspace style from the main app from the moment you sign up.</p>
+            </div>
+            <form
+              className="space-y-5"
+              onSubmit={handleSignUp}
+            >
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-300 block">Username</label>
+              <label className="block text-sm font-medium text-slate-700">Username</label>
               <div className="relative">
-                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xl">
+                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl">
                   person
                 </span>
                 <input
-                  className="w-full bg-slate-900/50 border border-slate-700 rounded-lg py-3 pl-11 pr-4 text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-4 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   placeholder="your_username"
                   type="text"
                   value={username}
@@ -977,13 +1016,13 @@ function SignUpPage({ onGoToLogin, onAuthSuccess }) {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-300 block">Email Address</label>
+              <label className="block text-sm font-medium text-slate-700">Email Address</label>
               <div className="relative">
-                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xl">
+                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl">
                   mail
                 </span>
                 <input
-                  className="w-full bg-slate-900/50 border border-slate-700 rounded-lg py-3 pl-11 pr-4 text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-4 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   placeholder="dev@example.com"
                   type="email"
                   value={email}
@@ -994,13 +1033,13 @@ function SignUpPage({ onGoToLogin, onAuthSuccess }) {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-300 block">Password</label>
+              <label className="block text-sm font-medium text-slate-700">Password</label>
               <div className="relative">
-                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xl">
+                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl">
                   lock
                 </span>
                 <input
-                  className="w-full bg-slate-900/50 border border-slate-700 rounded-lg py-3 pl-11 pr-11 text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-11 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   placeholder="********"
                   type="password"
                   value={password}
@@ -1008,7 +1047,7 @@ function SignUpPage({ onGoToLogin, onAuthSuccess }) {
                   required
                 />
                 <button
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                   type="button"
                 >
                   <span className="material-symbols-outlined text-xl">visibility</span>
@@ -1017,13 +1056,13 @@ function SignUpPage({ onGoToLogin, onAuthSuccess }) {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-300 block">Codeforces ID</label>
+              <label className="block text-sm font-medium text-slate-700">Codeforces ID</label>
               <div className="relative">
-                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xl">
+                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl">
                   code
                 </span>
                 <input
-                  className="w-full bg-slate-900/50 border border-slate-700 rounded-lg py-3 pl-11 pr-4 text-white placeholder:text-slate-600 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-4 font-mono text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   placeholder="tourist"
                   type="text"
                   value={codeforcesId}
@@ -1031,50 +1070,35 @@ function SignUpPage({ onGoToLogin, onAuthSuccess }) {
                   required
                 />
               </div>
-              <p className="text-[11px] text-primary/80 flex items-center gap-1 mt-1">
+              <p className="mt-1 flex items-center gap-1 text-[11px] text-primary/80">
                 <span className="material-symbols-outlined text-[14px]">info</span>
                 We&apos;ll use this to sync your contest data.
               </p>
             </div>
 
-            {errorMessage ? <p className="text-red-400 text-sm">{errorMessage}</p> : null}
+              {errorMessage ? <p className="text-sm text-red-500">{errorMessage}</p> : null}
 
-            <button
-              className="w-full bg-primary hover:bg-primary/90 disabled:opacity-70 text-white font-semibold py-3.5 rounded-lg shadow-[0_0_20px_rgba(37,106,244,0.3)] transition-all active:scale-[0.98] mt-4 flex items-center justify-center gap-2"
-              type="submit"
-              disabled={isSubmitting}
-            >
-              <span>{isSubmitting ? "Signing Up..." : "Sign Up"}</span>
-              <span className="material-symbols-outlined text-xl">arrow_forward</span>
-            </button>
-          </form>
+              <button
+                className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 font-semibold text-white shadow-[0_10px_22px_rgba(57,44,193,0.25)] transition-all active:scale-[0.98] hover:bg-primary/90 disabled:opacity-70"
+                type="submit"
+                disabled={isSubmitting}
+              >
+                <span>{isSubmitting ? "Signing Up..." : "Sign Up"}</span>
+                <span className="material-symbols-outlined text-xl">arrow_forward</span>
+              </button>
+            </form>
+            <p className="mt-8 text-center text-sm text-slate-500">
+              Already have an account?
+              <button
+                className="ml-1 font-semibold text-primary hover:underline"
+                onClick={onGoToLogin}
+                type="button"
+              >
+                Log in
+              </button>
+            </p>
+          </section>
         </div>
-
-        <p className="text-center text-slate-400 text-sm mt-8">
-          Already have an account?
-          <button
-            className="text-primary font-semibold hover:underline ml-1"
-            onClick={onGoToLogin}
-            type="button"
-          >
-            Log in
-          </button>
-        </p>
-      </div>
-
-      <div className="fixed bottom-0 left-0 right-0 bg-slate-900/80 backdrop-blur-md border-t border-slate-800 px-6 py-3 flex justify-around items-center md:hidden">
-        <a className="text-slate-500 hover:text-primary transition-colors flex flex-col items-center gap-1" href="#">
-          <span className="material-symbols-outlined">home</span>
-          <span className="text-[10px]">Home</span>
-        </a>
-        <a className="text-slate-500 hover:text-primary transition-colors flex flex-col items-center gap-1" href="#">
-          <span className="material-symbols-outlined">trophy</span>
-          <span className="text-[10px]">Leaderboard</span>
-        </a>
-        <a className="text-primary flex flex-col items-center gap-1" href="#">
-          <span className="material-symbols-outlined">person</span>
-          <span className="text-[10px]">Profile</span>
-        </a>
       </div>
     </div>
   );
@@ -1118,41 +1142,51 @@ function LoginPage({ onGoToSignup, onAuthSuccess }) {
   };
 
   return (
-    <div
-      className="bg-background-light dark:bg-background-dark flex items-center justify-center p-4 selection:bg-primary/30 relative overflow-hidden"
-      style={{ minHeight: "max(884px, 100dvh)" }}
-    >
-      <div className="fixed inset-0 overflow-hidden -z-10 pointer-events-none">
-        <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-primary/10 rounded-full blur-[120px]"></div>
-        <div className="absolute -bottom-[10%] -right-[10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px]"></div>
-      </div>
+    <div className="min-h-screen bg-[#f4f6fb] text-slate-900">
+      <div className="mx-auto flex min-h-screen max-w-6xl items-center justify-center px-4 py-10 md:px-6">
+        <div className="grid w-full items-center gap-8 lg:grid-cols-[1.05fr_0.95fr]">
+          <section className="hidden rounded-[28px] bg-[#2d3133] p-8 text-white shadow-2xl lg:block">
+            <div className="mb-10 flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-accent-purple shadow-[0_10px_22px_rgba(57,44,193,0.35)]">
+                <span className="material-symbols-outlined filled-icon text-white">insights</span>
+              </div>
+              <div>
+                <h1 className="font-display text-xl font-bold tracking-tight text-[#c8c5ff]">CP Mentor</h1>
+                <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500">Elite Logic</p>
+              </div>
+            </div>
+            <h2 className="font-display text-4xl font-black leading-tight">Step back into your training arena.</h2>
+            <p className="mt-4 max-w-md text-sm leading-relaxed text-slate-300">
+              Log in to continue with your dashboard, personalized practice sheet, contest setup, and submission review tools.
+            </p>
+            <div className="mt-8 space-y-3">
+              <div className="rounded-[18px] bg-white/5 px-4 py-3 text-sm text-slate-200">Review weak topics and solve recommendations inside the app.</div>
+              <div className="rounded-[18px] bg-white/5 px-4 py-3 text-sm text-slate-200">Refresh profile stats and inspect recent submissions.</div>
+              <div className="rounded-[18px] bg-white/5 px-4 py-3 text-sm text-slate-200">Stay ready for your next weekly contest window.</div>
+            </div>
+          </section>
 
-      <div className="w-full max-w-[440px]">
-        <div className="flex flex-col items-center mb-8">
-          <div className="bg-primary p-2.5 rounded-xl shadow-lg shadow-primary/20 mb-3">
-            <span className="material-symbols-outlined text-white text-3xl block">terminal</span>
-          </div>
-          <h2 className="text-white text-xl font-bold tracking-tight">CP Mentor</h2>
-        </div>
+          <section className="rounded-[28px] bg-white/90 p-6 shadow-[0_20px_60px_rgba(148,163,184,0.18)] ring-1 ring-white/70 sm:p-8">
+            <div className="mb-8 text-center lg:text-left">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-accent-purple shadow-[0_10px_22px_rgba(57,44,193,0.25)] lg:mx-0">
+                <span className="material-symbols-outlined text-white">login</span>
+              </div>
+              <h1 className="font-display text-3xl font-black tracking-tight text-slate-950">Welcome Back</h1>
+              <p className="mt-2 text-sm text-slate-500">Sign in with the same clean workspace style used across the app.</p>
+            </div>
 
-        <div className="glass-card rounded-2xl p-8 shadow-2xl">
-          <div className="mb-8">
-            <h1 className="text-white text-3xl font-bold tracking-tight mb-2">Welcome Back</h1>
-            <p className="text-slate-400 text-sm">Elevate your competitive programming skills.</p>
-          </div>
-
-          <form
-            className="space-y-5"
-            onSubmit={handleLogin}
-          >
+            <form
+              className="space-y-5"
+              onSubmit={handleLogin}
+            >
             <div className="space-y-2">
-              <label className="text-slate-300 text-sm font-medium ml-1">Email Address</label>
+              <label className="ml-1 text-sm font-medium text-slate-700">Email Address</label>
               <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500 group-focus-within:text-primary transition-colors">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400 transition-colors group-focus-within:text-primary pointer-events-none">
                   <span className="material-symbols-outlined text-[20px]">mail</span>
                 </div>
                 <input
-                  className="w-full bg-slate-900/50 border border-slate-700 text-white text-sm rounded-xl py-3.5 pl-11 pr-4 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-slate-600"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3.5 pl-11 pr-4 text-sm text-slate-900 placeholder:text-slate-400 transition-all focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                   placeholder="name@example.com"
                   type="email"
                   value={email}
@@ -1164,17 +1198,17 @@ function LoginPage({ onGoToSignup, onAuthSuccess }) {
 
             <div className="space-y-2">
               <div className="flex justify-between items-center ml-1">
-                <label className="text-slate-300 text-sm font-medium">Password</label>
+                <label className="text-sm font-medium text-slate-700">Password</label>
                 <a className="text-primary text-xs font-semibold hover:underline" href="#">
                   Forgot Password?
                 </a>
               </div>
               <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500 group-focus-within:text-primary transition-colors">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400 transition-colors group-focus-within:text-primary pointer-events-none">
                   <span className="material-symbols-outlined text-[20px]">lock</span>
                 </div>
                 <input
-                  className="w-full bg-slate-900/50 border border-slate-700 text-white text-sm rounded-xl py-3.5 pl-11 pr-11 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-slate-600"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3.5 pl-11 pr-11 text-sm text-slate-900 placeholder:text-slate-400 transition-all focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                   placeholder="********"
                   type="password"
                   value={password}
@@ -1182,7 +1216,7 @@ function LoginPage({ onGoToSignup, onAuthSuccess }) {
                   required
                 />
                 <button
-                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-500 hover:text-slate-300 transition-colors"
+                  className="absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition-colors hover:text-slate-600"
                   type="button"
                 >
                   <span className="material-symbols-outlined text-[20px]">visibility</span>
@@ -1190,52 +1224,29 @@ function LoginPage({ onGoToSignup, onAuthSuccess }) {
               </div>
             </div>
 
-            {errorMessage ? <p className="text-red-400 text-sm">{errorMessage}</p> : null}
+              {errorMessage ? <p className="text-sm text-red-500">{errorMessage}</p> : null}
 
-            <button
-              className="w-full bg-primary hover:bg-primary/90 disabled:opacity-70 text-white font-semibold py-3.5 rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-[0.98] mt-2"
-              type="submit"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? "Logging In..." : "Log In"}
-            </button>
-          </form>
+              <button
+                className="mt-2 w-full rounded-xl bg-primary py-3.5 font-semibold text-white shadow-[0_10px_22px_rgba(57,44,193,0.25)] transition-all active:scale-[0.98] hover:bg-primary/90 disabled:opacity-70"
+                type="submit"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Logging In..." : "Log In"}
+              </button>
+            </form>
 
-          <div className="relative my-8">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-700"></div>
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-transparent px-2 text-slate-500 font-medium">Or continue with</span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <button className="flex items-center justify-center gap-2 bg-slate-800/50 hover:bg-slate-800 border border-slate-700 text-white text-sm font-medium py-2.5 rounded-xl transition-colors">
-              <img
-                alt="Google logo icon"
-                className="w-4 h-4"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuA4Q1KPdd5j0CC4jmfRphzmapBtiiPcL2uTSfGb19hL7SZE3YESzyvRLz6rxx_-GEDQeSWvP1U5NQkfFKb8anFGBMlFqlfRShz-4b1CUCnZL1uqj_P4JhKb3kL-F0B__FJn_fFRN4qnLWAYAiTO6Tg_I20hIkMzEWQhpMMuqWFgOp4zDq7ZiuT0Ax07xDkuI0mdW14Re9v5Xw2GiPFAQWPg-uHp6rE183sMhUD6yL5yYDVa9vpIhUgdvFyBgUxgwQL47zCfH2JCVts"
-              />
-              Google
-            </button>
-            <button className="flex items-center justify-center gap-2 bg-slate-800/50 hover:bg-slate-800 border border-slate-700 text-white text-sm font-medium py-2.5 rounded-xl transition-colors">
-              <span className="material-symbols-outlined text-[18px]">terminal</span>
-              GitHub
-            </button>
-          </div>
+            <p className="mt-8 text-center text-sm text-slate-500">
+              Don&apos;t have an account?
+              <button
+                className="ml-1 font-semibold text-primary hover:underline decoration-2 underline-offset-4"
+                onClick={onGoToSignup}
+                type="button"
+              >
+                Sign Up
+              </button>
+            </p>
+          </section>
         </div>
-
-        <p className="text-center mt-8 text-slate-400 text-sm">
-          Don&apos;t have an account?
-          <button
-            className="text-primary font-semibold hover:underline decoration-2 underline-offset-4 ml-1"
-            onClick={onGoToSignup}
-            type="button"
-          >
-            Sign Up
-          </button>
-        </p>
       </div>
     </div>
   );
@@ -1364,7 +1375,7 @@ function DashboardPage({
       setSubmissionModal({
         open: true,
         loading: false,
-        error: err?.message || "Failed to load submission source",
+        error: err?.message || "Failed to load submission source inside CP Mentor.",
         payload: { submission_url: url },
       });
     }
@@ -1382,274 +1393,214 @@ function DashboardPage({
   };
 
   return (
-    <div className="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen pb-24 md:pb-0 md:pl-64">
-      <aside className="fixed left-0 top-0 hidden h-full w-64 flex-col border-r border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-card-dark md:flex">
-        <div className="mb-8 flex items-center gap-3 px-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-white">
-            <span className="material-symbols-outlined">terminal</span>
+    <div className="min-h-screen bg-[#f4f6fb] text-slate-900 md:pl-52">
+      <aside className="fixed left-0 top-0 hidden h-full w-52 flex-col bg-[#2d3133] px-3 py-4 text-white shadow-2xl md:flex">
+        <div className="mb-7 flex items-center gap-2.5 px-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent-purple shadow-[0_8px_18px_rgba(57,44,193,0.35)]">
+            <span className="material-symbols-outlined filled-icon text-white">insights</span>
           </div>
-          <h1 className="text-xl font-bold tracking-tight">CP Tracker</h1>
+          <div>
+            <h1 className="font-display text-[15px] font-bold tracking-tight text-[#c8c5ff]">CP Mentor</h1>
+            <p className="text-[9px] font-bold uppercase tracking-[0.24em] text-slate-500">Elite Logic</p>
+          </div>
         </div>
 
-        <nav className="flex flex-1 flex-col gap-2">
-          <a className="flex items-center gap-3 rounded-lg bg-primary/10 px-3 py-2 text-primary" href="#">
-            <span className="material-symbols-outlined">dashboard</span>
-            <span className="font-medium">Dashboard</span>
-          </a>
-          <button
-            className="flex items-center gap-3 rounded-lg px-3 py-2 text-left text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
-            onClick={onOpenPersonalizedSheet}
-            type="button"
-          >
-            <span className="material-symbols-outlined">description</span>
-            <span className="font-medium">Personalized Sheet</span>
+        <nav className="flex flex-1 flex-col gap-1">
+          <div className="flex items-center gap-2.5 rounded-xl border-l-4 border-primary bg-primary/10 px-3 py-2 text-[12px] font-medium text-white">
+            <span className="material-symbols-outlined text-primary-fixed-dim">dashboard</span>
+            <span>Dashboard</span>
+          </div>
+          <button className="group flex items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[12px] font-medium text-slate-400 transition-all hover:bg-white/5 hover:text-white" onClick={onOpenPersonalizedSheet} type="button">
+            <span className="material-symbols-outlined transition-transform group-hover:scale-110">assignment</span>
+            <span>Personalized Sheet</span>
           </button>
-          <button
-            className="flex items-center gap-3 rounded-lg px-3 py-2 text-left text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
-            onClick={onOpenPersonalizedContest}
-            type="button"
-          >
-            <span className="material-symbols-outlined">emoji_events</span>
-            <span className="font-medium">Personalized Contest</span>
+          <button className="group flex items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[12px] font-medium text-slate-400 transition-all hover:bg-white/5 hover:text-white" onClick={onOpenPersonalizedContest} type="button">
+            <span className="material-symbols-outlined transition-transform group-hover:scale-110">emoji_events</span>
+            <span>Personalized Contest</span>
           </button>
-          <button
-            className="flex items-center gap-3 rounded-lg px-3 py-2 text-left text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
-            onClick={onOpenUpcoming}
-            type="button"
-          >
-            <span className="material-symbols-outlined">calendar_month</span>
-            <span className="font-medium">Upcoming Contest</span>
+          <button className="group flex items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[12px] font-medium text-slate-400 transition-all hover:bg-white/5 hover:text-white" onClick={onOpenUpcoming} type="button">
+            <span className="material-symbols-outlined transition-transform group-hover:scale-110">calendar_today</span>
+            <span>Upcoming Contests</span>
           </button>
         </nav>
 
-        <div className="mt-auto rounded-xl bg-slate-100 p-4 dark:bg-slate-800/50">
-          <button
-            className="flex w-full items-center gap-3 rounded-lg px-1 py-1 text-left transition-colors hover:bg-slate-200/70 dark:hover:bg-slate-700/60"
-            onClick={handleLogoutClick}
-            type="button"
-            title="Open logout"
-          >
-            <div
-              className="h-10 w-10 rounded-full bg-cover bg-center"
-              style={{
-                backgroundImage:
-                  "url('https://lh3.googleusercontent.com/aida-public/AB6AXuAq887wRBDbiCSDU6K95-YpV9iKeikbvwxJ-b0eW5bVgf2YrA-dgR9dt1hLIAZ_UMhBPBdnzSTGHBHOQRhHKmK8dlvyIIZw5zGfvuwW02yUZJU5F_kU8diZLDEgb4dblcgSVFE9Hyi4uib3Tcb79kkntBzVXXfBNyqrhmtVsV1TYTo6YStgPCO02gFSxXdV4s2RqaZp0st-Bxy9PttyCTbJ4ebDXMjmOJFyb26cmVBHwm98VKRdyMO1Jt2dUkfBpchC32T0OErsXjI')",
-              }}
-            ></div>
-            <div>
-              <p className="text-sm font-bold">{dashboardData?.username || authUser?.username || "user"}</p>
-              <p className="text-xs text-slate-500">{dashboardData?.rank || "unrated"}</p>
-            </div>
-            <span className="material-symbols-outlined ml-auto text-slate-500">logout</span>
+        <div className="mt-auto border-t border-white/5 pt-4">
+          <button className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[12px] font-medium text-slate-500 transition-colors hover:bg-white/5 hover:text-white" onClick={handleLogoutClick} type="button">
+            <span className="material-symbols-outlined">logout</span>
+            <span>Logout</span>
           </button>
         </div>
       </aside>
 
-      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white/80 px-4 py-4 backdrop-blur-md dark:border-slate-800 dark:bg-background-dark/80 md:hidden">
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white">
-            <span className="material-symbols-outlined text-lg">terminal</span>
-          </div>
-          <span className="font-bold">CP Tracker</span>
+      <header className="sticky top-0 z-30 flex h-12 items-center justify-between bg-[#f4f6fb]/90 px-4 backdrop-blur md:px-6">
+        <div className="hidden items-center gap-8 md:flex">
+          <nav className="hidden items-center gap-5 md:flex">
+            <span className="cursor-default border-b-2 border-primary pb-1 text-[11px] font-bold text-primary">Practice</span>
+            <span className="cursor-default border-b-2 border-transparent pb-1 text-[11px] font-bold text-slate-500">Compete</span>
+          </nav>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 disabled:opacity-60"
-            disabled={dashboardLoading || !authUser?.codeforces_id}
-            onClick={fetchDashboard}
-            type="button"
-          >
-            <span className="material-symbols-outlined">sync</span>
+        <div className="flex items-center gap-3">
+          <button className="rounded-full p-2 text-slate-500 transition-colors hover:bg-white hover:text-primary disabled:opacity-60" disabled={dashboardLoading || !authUser?.codeforces_id} onClick={fetchDashboard} type="button" title="Sync profile">
+            <span className="material-symbols-outlined">{dashboardLoading ? "progress_activity" : "notifications"}</span>
           </button>
-          <button
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800"
-            onClick={handleLogoutClick}
-            type="button"
-            title="Logout"
-          >
-            <span className="material-symbols-outlined">person</span>
+          <button className="rounded-full p-2 text-slate-500 transition-colors hover:bg-white hover:text-primary" onClick={handleLogoutClick} type="button" title="Logout">
+            <span className="material-symbols-outlined">logout</span>
           </button>
+          <div className="flex h-6 w-6 items-center justify-center rounded-full border border-slate-300 bg-slate-800 text-[9px] font-bold uppercase text-white">
+            {String(authUser?.username || authUser?.email || authUser?.codeforces_id || "CP").slice(0, 2)}
+          </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl p-4 md:p-8">
-        <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+      <main className="mx-auto max-w-6xl px-4 py-5 md:px-6">
+        <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-bold md:text-3xl">
-              Welcome back,{" "}
-              <span className="text-accent-purple">
-                {dashboardData?.username || authUser?.username || "coder"}
-              </span>
-            </h2>
-            <p className="mt-1 text-slate-500 dark:text-slate-400">Last synced: {lastSyncedLabel}</p>
+            <h1 className="font-display text-2xl font-extrabold tracking-tight text-slate-950">
+              Welcome back, <span className="text-primary">{dashboardData?.username || authUser?.username || "coder"}</span>
+            </h1>
+            <p className="mt-1 text-[11px] text-slate-500">Last synced: {lastSyncedLabel}</p>
           </div>
-          <button
-            className="hidden items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-70 md:flex"
-            disabled={dashboardLoading || !authUser?.codeforces_id}
-            onClick={fetchDashboard}
-            type="button"
-          >
-            <span className="material-symbols-outlined text-sm">sync</span>
+          <button className="rounded-xl bg-primary px-4 py-2 text-[11px] font-bold text-white shadow-[0_10px_22px_rgba(57,44,193,0.20)] disabled:opacity-60" disabled={dashboardLoading || !authUser?.codeforces_id} onClick={fetchDashboard} type="button">
+            <span className="material-symbols-outlined mr-1 align-middle text-sm">sync</span>
             {dashboardLoading ? "Syncing..." : "Sync Profile"}
           </button>
         </div>
 
         {dashboardLoading ? (
-          <p className="mb-6 text-sm text-slate-500 dark:text-slate-400">
-            Loading dashboard data from Codeforces...
-          </p>
+          <div className="mb-5 rounded-[24px] border border-slate-200 bg-white/90 p-5 text-sm text-slate-500 shadow-sm">Loading dashboard data from Codeforces...</div>
         ) : null}
-        {dashboardError ? <p className="mb-6 text-sm text-red-500">{dashboardError}</p> : null}
+        {dashboardError ? <div className="mb-5 rounded-[24px] border border-red-200 bg-white/90 p-5 text-sm text-red-500 shadow-sm">{dashboardError}</div> : null}
 
-        <section className="mb-10">
-          <div className="mb-4 flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary">analytics</span>
-            <h3 className="text-lg font-bold">Codeforces Stats</h3>
-          </div>
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <div className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-card-dark">
-              <span className="text-sm font-medium text-slate-500 dark:text-slate-400">Current Rating</span>
-              <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-bold text-accent-purple">{dashboardData?.current_rating ?? 0}</span>
-                <span className={`text-xs font-semibold ${ratingDelta >= 0 ? "text-green-500" : "text-red-500"}`}>
-                  {ratingDeltaLabel}
-                </span>
+        <section className="mb-5 grid grid-cols-1 gap-4 xl:grid-cols-4">
+          <section className="rounded-[22px] bg-white/90 p-4 shadow-[0_14px_40px_rgba(148,163,184,0.15)] ring-1 ring-white/70 sm:p-5">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Current Rating</p>
+              <div className="mt-2 flex items-end gap-2">
+                <h2 className="font-display text-3xl font-black tracking-tight text-primary">{dashboardData?.current_rating ?? 0}</h2>
+                <span className={`mb-1 text-[11px] font-bold ${ratingDelta >= 0 ? "text-emerald-600" : "text-rose-500"}`}>{ratingDeltaLabel}</span>
               </div>
-              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                <div
-                  className="h-full bg-accent-purple"
-                  style={{ width: `${Math.min(Math.max(((dashboardData?.current_rating ?? 0) / 3500) * 100, 0), 100)}%` }}
-                ></div>
+              <div className="mt-4 h-2.5 w-full rounded-full bg-slate-100">
+                <div className="h-full rounded-full bg-gradient-to-r from-primary to-accent-purple" style={{ width: `${Math.min(Math.max(((dashboardData?.current_rating ?? 0) / 3500) * 100, 0), 100)}%` }}></div>
               </div>
-            </div>
-            <div className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-card-dark">
-              <span className="text-sm font-medium text-slate-500 dark:text-slate-400">Max Rating</span>
-              <span className="text-3xl font-bold">{dashboardData?.max_rating ?? 0}</span>
-              <span className="text-xs text-slate-400">{dashboardData?.max_rank || "unrated"} peak</span>
-            </div>
-            <div className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-card-dark">
-              <span className="text-sm font-medium text-slate-500 dark:text-slate-400">Friends Count</span>
-              <span className="text-3xl font-bold text-primary">{dashboardData?.friend_of_count ?? 0}</span>
-              <span className="text-xs text-slate-400">Contribution: {dashboardData?.contribution ?? 0}</span>
-            </div>
-            <div className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-card-dark">
-              <span className="text-sm font-medium text-slate-500 dark:text-slate-400">Problems Solved</span>
-              <span className="text-3xl font-bold">{dashboardData?.problems_solved ?? 0}</span>
-              <span className="text-xs text-slate-400">Codeforces accepted problems</span>
-            </div>
-          </div>
+            </section>
+            <section className="rounded-[22px] bg-white/90 p-4 shadow-[0_14px_40px_rgba(148,163,184,0.15)] ring-1 ring-white/70 sm:p-5">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Max Rating</p>
+              <h2 className="mt-2 font-display text-3xl font-black tracking-tight text-slate-950">{dashboardData?.max_rating ?? 0}</h2>
+              <p className="mt-2 text-[11px] text-slate-500">{dashboardData?.max_rank || "unrated"} peak</p>
+            </section>
+            <section className="rounded-[22px] bg-white/90 p-4 shadow-[0_14px_40px_rgba(148,163,184,0.15)] ring-1 ring-white/70 sm:p-5">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Friends Count</p>
+              <h2 className="mt-2 font-display text-3xl font-black tracking-tight text-slate-950">{dashboardData?.friend_of_count ?? 0}</h2>
+              <p className="mt-2 text-[11px] text-slate-500">Contribution: {dashboardData?.contribution ?? 0}</p>
+            </section>
+            <section className="rounded-[22px] bg-white/90 p-4 shadow-[0_14px_40px_rgba(148,163,184,0.15)] ring-1 ring-white/70 sm:p-5">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Problems Solved</p>
+              <h2 className="mt-2 font-display text-3xl font-black tracking-tight text-slate-950">{dashboardData?.problems_solved ?? 0}</h2>
+              <p className="mt-2 text-[11px] text-slate-500">Codeforces accepted problems</p>
+          </section>
         </section>
 
-        <section className="mb-10 grid gap-4 lg:grid-cols-3">
-          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-card-dark">
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-bold">Weak Topic Progress</h3>
-              <span className="text-[11px] text-slate-500">Needs focus</span>
+        <section className="mb-5 grid gap-4 lg:grid-cols-3">
+          <section className="rounded-[22px] bg-white/90 p-4 shadow-[0_14px_40px_rgba(148,163,184,0.15)] ring-1 ring-white/70 sm:p-5">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="font-display text-lg font-bold text-slate-900">Weak Topic Progress</h3>
+              <span className="rounded-full bg-rose-50 px-3 py-1 text-[10px] font-bold text-rose-600">Needs focus</span>
             </div>
             {weakTopicProgressRows.length === 0 ? (
-              <p className="text-sm text-slate-500 dark:text-slate-400">No weak-topic data yet.</p>
+              <div className="rounded-[20px] border-2 border-dashed border-slate-300 bg-slate-100/70 p-6 text-center text-sm text-slate-500">No weak-topic data yet.</div>
             ) : (
               <div className="space-y-3">
                 {weakTopicProgressRows.slice(0, 5).map((topic) => {
                   const weakness = Math.max(0, Number(topic.weakness_score || 0));
                   const barPct = Math.min(100, Math.max(8, Math.round(weakness * 35)));
                   return (
-                    <div key={topic.topic}>
-                      <div className="mb-1 flex items-center justify-between text-xs">
-                        <span className="font-medium">{formatTopicLabel(topic.topic_label || topic.topic)}</span>
-                        <span className="text-slate-500">
-                          {topic.solved_unique || 0}/{topic.attempted_unique || 0}
-                        </span>
+                    <div className="rounded-[18px] bg-slate-50 px-4 py-3" key={topic.topic}>
+                      <div className="mb-2 flex items-center justify-between gap-2 text-[11px]">
+                        <span className="font-bold text-slate-900">{formatTopicLabel(topic.topic_label || topic.topic)}</span>
+                        <span className="text-slate-500">{topic.solved_unique || 0}/{topic.attempted_unique || 0}</span>
                       </div>
-                      <div className="h-2 w-full rounded-full bg-slate-100 dark:bg-slate-800">
-                        <div className="h-full rounded-full bg-accent-rose" style={{ width: `${barPct}%` }}></div>
+                      <div className="h-2.5 w-full rounded-full bg-white">
+                        <div className="h-full rounded-full bg-gradient-to-r from-rose-400 to-primary" style={{ width: `${barPct}%` }}></div>
                       </div>
                     </div>
                   );
                 })}
               </div>
             )}
-          </div>
+          </section>
 
-          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-card-dark">
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-bold">Latest Contest Result</h3>
+          <section className="rounded-[22px] bg-white/90 p-4 shadow-[0_14px_40px_rgba(148,163,184,0.15)] ring-1 ring-white/70 sm:p-5">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <h3 className="font-display text-lg font-bold text-slate-900">Latest Contest Result</h3>
               <span className="text-[11px] text-slate-500">{latestContestCompletedLabel}</span>
             </div>
             {latestContestResult ? (
-              <div className="space-y-2 text-sm">
-                <p>
-                  Solved:{" "}
-                  <span className="font-semibold">
-                    {latestContestResult.solved_count || 0}/{latestContestResult.total_problems || 0}
-                  </span>
-                </p>
-                <p>
-                  Score:{" "}
-                  <span className="font-semibold">
-                    {latestContestResult.scored_points || 0}/{latestContestResult.total_points || 0}
-                  </span>
-                </p>
-                <p>
-                  Accuracy: <span className="font-semibold">{latestContestResult.score_pct || 0}%</span>
-                </p>
+              <div className="space-y-3 text-sm">
+                <div className="rounded-[18px] bg-slate-50 px-4 py-3">
+                  Solved: <span className="font-bold text-slate-900">{latestContestResult.solved_count || 0}/{latestContestResult.total_problems || 0}</span>
+                </div>
+                <div className="rounded-[18px] bg-slate-50 px-4 py-3">
+                  Score: <span className="font-bold text-slate-900">{latestContestResult.scored_points || 0}/{latestContestResult.total_points || 0}</span>
+                </div>
+                <div className="rounded-[18px] bg-slate-50 px-4 py-3">
+                  Accuracy: <span className="font-bold text-slate-900">{latestContestResult.score_pct || 0}%</span>
+                </div>
               </div>
             ) : (
-              <p className="text-sm text-slate-500 dark:text-slate-400">Complete a contest to see results here.</p>
+              <div className="rounded-[20px] border-2 border-dashed border-slate-300 bg-slate-100/70 p-6 text-center text-sm text-slate-500">Complete a contest to see results here.</div>
             )}
-          </div>
+          </section>
 
-          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-card-dark">
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-bold">Weekly Contest Plan</h3>
-              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
-                {clusterLabel}
-              </span>
+          <section className="rounded-[22px] bg-white/90 p-4 shadow-[0_14px_40px_rgba(148,163,184,0.15)] ring-1 ring-white/70 sm:p-5">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <h3 className="font-display text-lg font-bold text-slate-900">Weekly Contest Plan</h3>
+              <span className="rounded-full bg-primary/10 px-3 py-1 text-[10px] font-bold text-primary">{clusterLabel}</span>
             </div>
-            <p className="text-sm text-slate-500 dark:text-slate-400">Next weekly contest: {nextWeeklyContestLabel}</p>
+            <div className="rounded-[18px] bg-slate-50 px-4 py-3 text-sm text-slate-700">
+              Next weekly contest: <span className="font-semibold">{nextWeeklyContestLabel}</span>
+            </div>
             {weeklySchedule ? (
-              <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+              <p className="mt-3 text-[11px] text-slate-500">
                 Scheduled day index: {weeklySchedule.weekday}, time: {String(weeklySchedule.hour).padStart(2, "0")}:
                 {String(weeklySchedule.minute).padStart(2, "0")}
               </p>
             ) : (
-              <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+              <p className="mt-3 text-[11px] text-slate-500">
                 Set your weekly contest schedule in the Personalized Contest page.
               </p>
             )}
-          </div>
+          </section>
         </section>
 
-        <div className="grid gap-8 lg:grid-cols-3">
-          <section className="lg:col-span-1">
+        <div className="grid gap-5 lg:grid-cols-3">
+          <section className="lg:col-span-1 rounded-[22px] bg-white/90 p-4 shadow-[0_14px_40px_rgba(148,163,184,0.15)] ring-1 ring-white/70 sm:p-5">
             <div className="mb-4 flex items-center gap-2">
               <span className="material-symbols-outlined text-primary">pie_chart</span>
-              <h3 className="text-lg font-bold">Topic Accuracy</h3>
+              <h3 className="font-display text-lg font-bold text-slate-900">Topic Accuracy</h3>
             </div>
-            <div className="flex flex-col gap-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-card-dark">
+            <div className="space-y-4">
               {topicAccuracyRows.map((row) => (
-                <div className="space-y-2" key={row.topic}>
-                  <div className="flex justify-between text-sm">
-                    <span className="font-medium">{row.topic}</span>
+                <div className="rounded-[18px] bg-slate-50 px-4 py-3" key={row.topic}>
+                  <div className="mb-2 flex justify-between text-sm">
+                    <span className="font-medium text-slate-900">{row.topic}</span>
                     <span className="font-bold text-primary">{row.value}%</span>
                   </div>
-                  <div className="h-2 w-full rounded-full bg-slate-100 dark:bg-slate-800">
-                    <div className="h-full rounded-full bg-primary" style={{ width: `${row.value}%` }}></div>
+                  <div className="h-2.5 w-full rounded-full bg-white">
+                    <div className="h-full rounded-full bg-gradient-to-r from-primary to-accent-purple" style={{ width: `${row.value}%` }}></div>
                   </div>
                 </div>
               ))}
             </div>
           </section>
 
-          <section className="lg:col-span-2">
+          <section className="lg:col-span-2 rounded-[22px] bg-white/90 p-4 shadow-[0_14px_40px_rgba(148,163,184,0.15)] ring-1 ring-white/70 sm:p-5">
             <div className="mb-4 flex items-center gap-2">
               <span className="material-symbols-outlined text-primary">history</span>
-              <h3 className="text-lg font-bold">Recent Submissions</h3>
+              <h3 className="font-display text-lg font-bold text-slate-900">Recent Submissions</h3>
             </div>
-            <div className="mb-3 flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm dark:border-amber-900/50 dark:bg-amber-900/20">
-              <span className="text-amber-700 dark:text-amber-300">Login to Codeforces to view submissions</span>
+            <div className="mb-4 flex items-center justify-between rounded-[18px] border border-amber-200 bg-amber-50 px-4 py-3 text-sm">
+              <span className="text-amber-700">Login to Codeforces to view submissions</span>
               <a
-                className="rounded-md bg-amber-600 px-3 py-1 text-xs font-semibold text-white hover:bg-amber-500"
+                className="rounded-full bg-amber-600 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-amber-500"
                 href="https://codeforces.com/enter"
                 rel="noreferrer"
                 target="_blank"
@@ -1657,10 +1608,10 @@ function DashboardPage({
                 Login to Codeforces
               </a>
             </div>
-            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-card-dark">
+            <div className="overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-sm">
               <div className="overflow-x-auto custom-scrollbar">
                 <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50 text-slate-500 dark:bg-slate-800/50 dark:text-slate-400">
+                  <thead className="bg-slate-50 text-slate-500">
                     <tr>
                       <th className="px-4 py-3 font-semibold">Problem Name</th>
                       <th className="px-4 py-3 font-semibold">Topic</th>
@@ -1669,26 +1620,24 @@ function DashboardPage({
                       <th className="px-4 py-3 font-semibold text-right">Time</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  <tbody className="divide-y divide-slate-100">
                     {recentSubmissionRows.map((row) => (
-                      <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/30" key={`${row.name}-${row.time}`}>
-                        <td className="px-4 py-4 font-medium">{row.name}</td>
-                        <td className="px-4 py-4 text-slate-500 dark:text-slate-400">{row.topic}</td>
+                      <tr className="hover:bg-slate-50" key={`${row.name}-${row.time}`}>
+                        <td className="px-4 py-4 font-medium text-slate-900">{row.name}</td>
+                        <td className="px-4 py-4 text-slate-500">{row.topic}</td>
                         <td className="px-4 py-4">
-                          <span
-                            className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold ${verdictStyles[row.tone]}`}
-                          >
+                          <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold ${verdictStyles[row.tone]}`}>
                             {row.verdict}
                           </span>
                         </td>
                         <td className="px-4 py-4 text-center">
                           <button
-                            className="rounded-md border border-slate-300 px-2 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 disabled:opacity-50"
+                            className="rounded-full border border-slate-200 px-3 py-1.5 text-[11px] font-bold text-slate-600 transition-colors hover:bg-slate-50 disabled:opacity-50"
                             disabled={!row.view_url}
                             onClick={() => openSubmissionInApp(row.view_url)}
                             type="button"
                           >
-                            View
+                            View Code
                           </button>
                         </td>
                         <td className="px-4 py-4 text-right text-slate-500">{row.time}</td>
@@ -1702,68 +1651,72 @@ function DashboardPage({
         </div>
       </main>
 
-      <nav className="fixed bottom-0 left-0 z-20 flex w-full border-t border-slate-200 bg-white px-2 py-3 dark:border-slate-800 dark:bg-card-dark md:hidden">
-        <a className="flex flex-1 flex-col items-center justify-center gap-1 text-primary" href="#">
+      <nav className="fixed bottom-0 left-0 z-20 flex w-full border-t border-slate-200 bg-white px-2 py-3 md:hidden">
+        <div className="flex flex-1 flex-col items-center justify-center gap-1 text-primary">
           <span className="material-symbols-outlined">dashboard</span>
           <span className="text-[10px] font-bold">Dashboard</span>
-        </a>
-        <a className="flex flex-1 flex-col items-center justify-center gap-1 text-slate-400" href="#">
-          <span className="material-symbols-outlined">description</span>
+        </div>
+        <button className="flex flex-1 flex-col items-center justify-center gap-1 text-slate-400" onClick={onOpenPersonalizedSheet} type="button">
+          <span className="material-symbols-outlined">assignment</span>
           <span className="text-[10px] font-medium">Sheet</span>
-        </a>
-        <button
-          className="flex flex-1 flex-col items-center justify-center gap-1 text-slate-400"
-          onClick={onOpenPersonalizedContest}
-          type="button"
-        >
+        </button>
+        <button className="flex flex-1 flex-col items-center justify-center gap-1 text-slate-400" onClick={onOpenPersonalizedContest} type="button">
           <span className="material-symbols-outlined">emoji_events</span>
           <span className="text-[10px] font-medium">Contest</span>
         </button>
-	        <button
-	          className="flex flex-1 flex-col items-center justify-center gap-1 text-slate-400"
-	          onClick={onOpenUpcoming}
-	          type="button"
-        >
+        <button className="flex flex-1 flex-col items-center justify-center gap-1 text-slate-400" onClick={onOpenUpcoming} type="button">
           <span className="material-symbols-outlined">calendar_month</span>
           <span className="text-[10px] font-medium">Upcoming</span>
         </button>
-	      </nav>
+      </nav>
       {submissionModal.open ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4">
-          <div className="w-full max-w-4xl rounded-xl border border-slate-700 bg-slate-900 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-700 px-4 py-3">
-              <h3 className="text-sm font-semibold text-white">Submission Source Code</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-4xl rounded-[28px] border border-white/70 bg-[#f8f9fd] shadow-[0_24px_70px_rgba(15,23,42,0.22)]">
+            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+              <div>
+                <h3 className="font-display text-base font-bold text-slate-900">Submission Source Code</h3>
+                <p className="mt-1 text-xs text-slate-500">View source inside CP Mentor without leaving your dashboard.</p>
+              </div>
               <button
-                className="rounded px-2 py-1 text-xs text-slate-300 hover:bg-slate-800"
+                className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50"
                 onClick={() => setSubmissionModal({ open: false, loading: false, error: "", payload: null })}
                 type="button"
               >
                 Close
               </button>
             </div>
-            <div className="space-y-3 p-4">
-              {submissionModal.loading ? <p className="text-sm text-slate-300">Loading source code...</p> : null}
-              {submissionModal.error ? <p className="text-sm text-red-300">{submissionModal.error}</p> : null}
+            <div className="space-y-4 p-5">
+              {submissionModal.loading ? <div className="rounded-[18px] border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500">Loading source code...</div> : null}
+              {submissionModal.error ? <div className="rounded-[18px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">{submissionModal.error}</div> : null}
               {submissionModal.payload?.submission_url ? (
-                <a
-                  className="text-xs text-primary underline"
-                  href={submissionModal.payload.submission_url}
-                  rel="noreferrer"
-                  target="_blank"
-                >
-                  Open on Codeforces
-                </a>
+                <div className="flex items-center gap-3">
+                  <a
+                    className="rounded-full bg-primary px-3 py-1.5 text-[11px] font-bold text-white"
+                    href={submissionModal.payload.submission_url}
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    Open on Codeforces
+                  </a>
+                  {!submissionModal.payload?.code ? (
+                    <span className="text-xs text-slate-400">Source can be blocked by Codeforces authentication/privacy rules.</span>
+                  ) : null}
+                </div>
               ) : null}
               {submissionModal.payload?.language ? (
-                <p className="text-xs text-slate-300">Language: {submissionModal.payload.language}</p>
+                <div className="rounded-[18px] bg-white px-4 py-3 text-xs text-slate-600 shadow-sm">Language: {submissionModal.payload.language}</div>
               ) : null}
               {submissionModal.payload?.verdict ? (
-                <p className="text-xs text-slate-300">Verdict: {submissionModal.payload.verdict}</p>
+                <div className="rounded-[18px] bg-white px-4 py-3 text-xs text-slate-600 shadow-sm">Verdict: {submissionModal.payload.verdict}</div>
               ) : null}
               {submissionModal.payload?.code ? (
-                <pre className="max-h-[60vh] overflow-auto rounded bg-black/40 p-3 text-xs text-slate-100">
+                <pre className="max-h-[60vh] overflow-auto rounded-[22px] border border-slate-200 bg-slate-950 p-4 text-xs text-slate-100 shadow-inner">
                   <code>{submissionModal.payload.code}</code>
                 </pre>
+              ) : !submissionModal.loading ? (
+                <div className="rounded-[20px] border-2 border-dashed border-slate-300 bg-white/80 p-6 text-center text-sm text-slate-500">
+                  Source code could not be embedded for this submission. Use the Codeforces link above if the submission is private or requires authentication.
+                </div>
               ) : null}
             </div>
           </div>
@@ -1778,6 +1731,7 @@ function PersonalizedSheetPage({
   onGoDashboard,
   onOpenPersonalizedContest,
   onOpenUpcoming,
+  onLogout,
   authUser,
   cachedSheet,
   onSheetData,
@@ -1870,6 +1824,11 @@ function PersonalizedSheetPage({
   const topicRecommendations = Array.isArray(sheetData?.recommendations) ? sheetData.recommendations : [];
   const suggestedProblems = topicRecommendations.flatMap((topic) => (Array.isArray(topic?.problems) ? topic.problems : []));
   const totalProblems = suggestedProblems.length;
+  const activeTopicCount = selectedTopics.length;
+  const strongestWeakness = topicProgressRows.reduce(
+    (max, row) => Math.max(max, Number(row?.weakness_score) || 0),
+    0
+  );
 
   const toggleTopicSelection = (topic) => {
     setSelectedTopics((prev) => {
@@ -2053,230 +2012,354 @@ function PersonalizedSheetPage({
     printWindow.document.close();
   };
 
-  return (
-    <div className="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen flex flex-col md:pl-64">
-      <aside className="fixed left-0 top-0 hidden h-full w-64 flex-col border-r border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-card-dark md:flex">
-        <div className="mb-8 flex items-center gap-3 px-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-white">
-            <span className="material-symbols-outlined">terminal</span>
-          </div>
-          <h1 className="text-xl font-bold tracking-tight">CP Tracker</h1>
-        </div>
+  const renderSuggestedProblemCard = (topicEntry, problem) => {
+    const difficulty = difficultyFromRating(problem.problem_rating);
+    const statusLabel =
+      problem.status === "solved"
+        ? { text: "Solved", cls: "status-solved" }
+        : problem.status === "attempted"
+          ? { text: "Attempted", cls: "status-attempted" }
+          : { text: "Fresh", cls: "status-none" };
 
-        <nav className="flex flex-1 flex-col gap-2">
-          <button
-            className="flex items-center gap-3 rounded-lg px-3 py-2 text-left text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
-            onClick={onGoDashboard}
-            type="button"
-          >
-            <span className="material-symbols-outlined">dashboard</span>
-            <span className="font-medium">Dashboard</span>
-          </button>
-          <a className="flex items-center gap-3 rounded-lg bg-primary/10 px-3 py-2 text-primary" href="#">
-            <span className="material-symbols-outlined">description</span>
-            <span className="font-medium">Personalized Sheet</span>
-          </a>
-          <button
-            className="flex items-center gap-3 rounded-lg px-3 py-2 text-left text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
-            onClick={onOpenPersonalizedContest}
-            type="button"
-          >
-            <span className="material-symbols-outlined">emoji_events</span>
-            <span className="font-medium">Personalized Contest</span>
-          </button>
-          <button
-            className="flex items-center gap-3 rounded-lg px-3 py-2 text-left text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
-            onClick={onOpenUpcoming}
-            type="button"
-          >
-            <span className="material-symbols-outlined">calendar_month</span>
-            <span className="font-medium">Upcoming Contest</span>
-          </button>
-        </nav>
-
-      </aside>
-
-      <header className="sticky top-0 z-20 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 py-3">
-        <div className="flex items-center justify-between max-w-2xl mx-auto w-full">
-          <h1 className="text-xl font-bold tracking-tight">Personalized Sheet</h1>
-          <div className="flex items-center gap-3">
-            <button
-              className="p-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 disabled:opacity-60 transition-colors"
-              title="Update Sheet"
-              onClick={() => fetchSheet(true)}
-              disabled={loading || !authUser?.codeforces_id}
+    return (
+      <div
+        className="rounded-[20px] border border-white/60 bg-white/90 p-3.5 shadow-[0_12px_28px_rgba(100,116,139,0.10)] transition-all hover:-translate-y-0.5 hover:shadow-[0_16px_40px_rgba(57,44,193,0.12)]"
+        key={`${topicEntry.topic}-${problem.problem_key}`}
+      >
+        <div className="mb-3 flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${difficulty.cls}`}>{difficulty.label}</span>
+              <span className="text-[10px] text-slate-500">{formatTopicLabel(topicEntry.topic_label || topicEntry.topic)}</span>
+            </div>
+            <a
+              className="line-clamp-2 font-display text-[14px] font-bold leading-tight text-slate-900 transition-colors hover:text-primary"
+              href={problem.cf_link}
+              rel="noreferrer"
+              target="_blank"
             >
-              <span className="material-symbols-outlined text-[22px]">update</span>
-            </button>
+              {problem.problem_name}
+            </a>
+            <p className="mt-1 text-[11px] text-slate-500">
+              #{problem.problem_key} - Rating {problem.problem_rating || "-"} - Rank {problem.rank_in_topic || "-"}
+            </p>
+          </div>
+          <span className={`shrink-0 rounded-full px-2 py-1 text-[9px] font-bold ${statusLabel.cls}`}>{statusLabel.text}</span>
+        </div>
+        <div className="flex items-center justify-between gap-3">
+          <div className="text-[10px] text-slate-500">
+            Weakness {topicEntry.weakness_score ?? 0} - Progress {topicEntry.recommended_progress_pct ?? 0}%
+          </div>
+          <div className="flex items-center gap-2">
             <button
-              className="hidden sm:flex items-center gap-1 px-3 py-2 rounded-lg bg-primary text-white font-medium text-sm hover:bg-primary/90 disabled:opacity-60 transition-colors"
-              disabled={loading || suggestedProblems.length === 0}
-              onClick={exportSheetAsPdf}
+              className="rounded-full bg-primary px-3 py-1.5 text-[11px] font-bold text-white"
+              onClick={() => openProblemEditor(problem)}
               type="button"
             >
-              <span className="material-symbols-outlined text-[18px]">picture_as_pdf</span>
-              <span>Export</span>
+              Solve
             </button>
+            <a
+              className="rounded-full border border-slate-200 px-3 py-1.5 text-[11px] font-bold text-slate-600 transition-colors hover:bg-slate-50"
+              href={problem.cf_link}
+              rel="noreferrer"
+              target="_blank"
+            >
+              Open
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const handleLogoutClick = async () => {
+    const shouldLogout = await askConfirm({
+      title: "Logout?",
+      message: "Do you want to log out from CP Mentor on this device?",
+      confirmLabel: "Logout",
+      danger: true,
+    });
+    if (!shouldLogout) return;
+    onLogout?.();
+  };
+
+  return (
+    <div className="min-h-screen bg-[#f4f6fb] text-slate-900 md:pl-52">
+      <aside className="fixed left-0 top-0 hidden h-full w-52 flex-col bg-[#2d3133] px-3 py-4 text-white shadow-2xl md:flex">
+        <div className="mb-7 flex items-center gap-2.5 px-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent-purple shadow-[0_8px_18px_rgba(57,44,193,0.35)]">
+            <span className="material-symbols-outlined filled-icon text-white">insights</span>
+          </div>
+          <div>
+            <h1 className="font-display text-[15px] font-bold tracking-tight text-[#c8c5ff]">CP Mentor</h1>
+            <p className="text-[9px] font-bold uppercase tracking-[0.24em] text-slate-500">Elite Logic</p>
+          </div>
+        </div>
+        <nav className="flex flex-1 flex-col gap-1">
+          <button className="group flex items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[12px] font-medium text-slate-400 transition-all hover:bg-white/5 hover:text-white" onClick={onGoDashboard} type="button">
+            <span className="material-symbols-outlined transition-transform group-hover:scale-110">dashboard</span>
+            <span>Dashboard</span>
+          </button>
+          <div className="flex items-center gap-2.5 rounded-xl border-l-4 border-primary bg-primary/10 px-3 py-2 text-[12px] font-medium text-white">
+            <span className="material-symbols-outlined text-primary-fixed-dim">assignment</span>
+            <span>Personalized Sheet</span>
+          </div>
+          <button className="group flex items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[12px] font-medium text-slate-400 transition-all hover:bg-white/5 hover:text-white" onClick={onOpenPersonalizedContest} type="button">
+            <span className="material-symbols-outlined transition-transform group-hover:scale-110">emoji_events</span>
+            <span>Personalized Contest</span>
+          </button>
+          <button className="group flex items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[12px] font-medium text-slate-400 transition-all hover:bg-white/5 hover:text-white" onClick={onOpenUpcoming} type="button">
+            <span className="material-symbols-outlined transition-transform group-hover:scale-110">calendar_today</span>
+            <span>Upcoming Contests</span>
+          </button>
+        </nav>
+        <div className="mt-auto border-t border-white/5 pt-4">
+          <button className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[12px] font-medium text-slate-500 transition-colors hover:bg-white/5 hover:text-white" onClick={handleLogoutClick} type="button">
+            <span className="material-symbols-outlined">logout</span>
+            <span>Logout</span>
+          </button>
+        </div>
+      </aside>
+
+      <header className="sticky top-0 z-30 flex h-12 items-center justify-between bg-[#f4f6fb]/90 px-4 backdrop-blur md:px-6">
+        <div className="hidden items-center gap-5 md:flex">
+          <span className="cursor-default border-b-2 border-primary pb-1 text-[11px] font-bold text-primary">Practice</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            className="rounded-full p-2 text-slate-500 transition-colors hover:bg-white hover:text-primary disabled:opacity-60"
+            onClick={() => fetchSheet(true)}
+            type="button"
+            title="Refresh sheet"
+            disabled={loading || !authUser?.codeforces_id}
+          >
+            <span className="material-symbols-outlined">{loading ? "progress_activity" : "notifications"}</span>
+          </button>
+          <button
+            className="rounded-full p-2 text-slate-500 transition-colors hover:bg-white hover:text-primary disabled:opacity-60"
+            onClick={exportSheetAsPdf}
+            type="button"
+            title="Export sheet"
+            disabled={loading || suggestedProblems.length === 0}
+          >
+            <span className="material-symbols-outlined">picture_as_pdf</span>
+          </button>
+          <div className="flex h-6 w-6 items-center justify-center rounded-full border border-slate-300 bg-slate-800 text-[9px] font-bold uppercase text-white">
+            {String(authUser?.username || authUser?.email || authUser?.codeforces_id || "CP").slice(0, 2)}
           </div>
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto px-4 py-6 space-y-4 max-w-2xl mx-auto w-full pb-8">
-        <div className="bg-[#1c2433] rounded-xl p-5 border border-slate-800 shadow-sm mb-6">
-          <div className="flex justify-between items-end mb-3">
-            <div>
-              <p className="text-slate-400 text-sm font-medium">Overall Progress</p>
-              <h2 className="text-2xl font-bold mt-1">
-                {totalProblems} <span className="text-sm font-normal text-slate-500">Suggested Problems</span>
-              </h2>
-            </div>
-            <div className="text-right">
-              <span className="text-primary font-bold">{sheetData?.cluster ?? "-"}</span>
-            </div>
+      <main className="mx-auto max-w-5xl px-4 py-5 md:px-6">
+        <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="font-display text-2xl font-extrabold tracking-tight text-slate-950">Personalized Sheet</h1>
+            <p className="mt-1 text-[11px] text-slate-500">Sharpen weak areas with the same focused training style as your contest workspace.</p>
           </div>
-          <div className="w-full bg-slate-800 rounded-full h-2.5">
-            <div className="bg-primary h-2.5 rounded-full" style={{ width: `${Math.min(totalProblems * 20, 100)}%` }}></div>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2 rounded-xl bg-[#2d3133] px-3 py-2 text-white shadow-sm">
+              <span className="material-symbols-outlined text-primary-fixed-dim text-base">assignment</span>
+              <span className="font-display text-[13px] font-black tracking-tight">{totalProblems} Problems</span>
+            </div>
+            <button
+              className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-[11px] font-bold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-60"
+              onClick={exportSheetAsPdf}
+              type="button"
+              disabled={loading || suggestedProblems.length === 0}
+            >
+              <span className="material-symbols-outlined mr-1 align-middle text-sm">picture_as_pdf</span>
+              Export Sheet
+            </button>
           </div>
         </div>
 
-        {!authUser?.codeforces_id ? (
-          <div className="bg-[#1c2433] rounded-xl border border-slate-800 p-4 text-sm text-slate-300">
-            Log in with a Codeforces-linked account to generate your personalized sheet.
-          </div>
-        ) : null}
-
-        <section className="bg-[#1c2433] rounded-xl border border-slate-800 p-4 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-white">Topics You Want To Master</h3>
-            <button
-              className="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-semibold disabled:opacity-60"
-              onClick={saveTopicSelection}
-              type="button"
-              disabled={savingTopics || loading}
-            >
-              {savingTopics ? "Saving..." : "Apply Topics"}
-            </button>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {(availableTopics || []).map((topic) => {
-              const active = selectedTopics.includes(topic);
-              return (
-                <button
-                  key={topic}
-                  className={`px-2.5 py-1.5 rounded-full text-xs border transition-colors ${
-                    active
-                      ? "bg-primary/20 border-primary/50 text-primary"
-                      : "bg-slate-800 border-slate-700 text-slate-300 hover:border-slate-500"
-                  }`}
-                  onClick={() => toggleTopicSelection(topic)}
-                  type="button"
-                >
-                  {formatTopicLabel(topic)}
-                </button>
-              );
-            })}
-          </div>
-          {preferenceError ? <p className="text-xs text-red-400">{preferenceError}</p> : null}
-        </section>
-
-        {loading ? (
-          <div className="bg-[#1c2433] rounded-xl border border-slate-800 p-4 text-sm text-slate-300">Generating recommendations...</div>
-        ) : null}
-        {sheetError ? <div className="bg-[#1c2433] rounded-xl border border-red-800 p-4 text-sm text-red-300">{sheetError}</div> : null}
-
-        <section className="bg-[#1c2433] rounded-xl border border-slate-800 p-4 space-y-3">
-          <h3 className="text-sm font-semibold text-white">Selected Topic Progress</h3>
-          {topicProgressRows.length === 0 ? (
-            <p className="text-sm text-slate-400">No topic progress available yet.</p>
-          ) : (
-            topicProgressRows.map((topicRow) => (
-              <div key={topicRow.topic}>
-                <div className="flex justify-between text-xs mb-1">
-                  <span>{topicRow.topic_label || formatTopicLabel(topicRow.topic)}</span>
-                  <span>
-                    {topicRow.solved_unique}/{topicRow.attempted_unique} solved
-                  </span>
+        <section className="space-y-5 pb-16">
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+            <section className="rounded-[22px] bg-white/90 p-4 shadow-[0_14px_40px_rgba(148,163,184,0.15)] ring-1 ring-white/70 sm:p-5">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Recommended Set</p>
+              <div className="mt-2 flex items-end justify-between gap-3">
+                <div>
+                  <h2 className="font-display text-3xl font-black tracking-tight text-slate-950">{totalProblems}</h2>
+                  <p className="text-[11px] text-slate-500">suggested problems ready</p>
                 </div>
-                <div className="h-2 w-full rounded-full bg-slate-800">
-                  <div
-                    className="h-full rounded-full bg-accent-rose"
-                    style={{ width: `${Math.min(Math.max(Number(topicRow.weakness_score || 0) * 35, 8), 100)}%` }}
-                  ></div>
-                </div>
+                <span className="rounded-full bg-primary/10 px-3 py-1 text-[10px] font-bold text-primary">{sheetData?.cluster ?? "-"}</span>
               </div>
-            ))
-          )}
-        </section>
+              <div className="mt-4 h-2.5 w-full rounded-full bg-slate-100">
+                <div className="h-full rounded-full bg-gradient-to-r from-primary to-accent-purple" style={{ width: `${Math.min(totalProblems * 20, 100)}%` }}></div>
+              </div>
+            </section>
 
-        <section className="space-y-3">
-          <h3 className="text-lg font-bold">Weak Topic Recommendations (5 Per Topic)</h3>
-          {!loading && !sheetError && authUser?.codeforces_id && topicRecommendations.length === 0 ? (
-            <div className="bg-[#1c2433] rounded-xl border border-slate-800 p-4 text-sm text-slate-300">
-              No recommendations found for the selected topics.
+            <section className="rounded-[22px] bg-white/90 p-4 shadow-[0_14px_40px_rgba(148,163,184,0.15)] ring-1 ring-white/70 sm:p-5">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Topic Focus</p>
+              <h2 className="mt-2 font-display text-3xl font-black tracking-tight text-slate-950">{activeTopicCount}</h2>
+              <p className="text-[11px] text-slate-500">selected mastery tracks</p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {selectedTopics.slice(0, 3).map((topic) => (
+                  <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-700" key={topic}>
+                    {formatTopicLabel(topic)}
+                  </span>
+                ))}
+                {selectedTopics.length > 3 ? (
+                  <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-700">+{selectedTopics.length - 3} more</span>
+                ) : null}
+              </div>
+            </section>
+
+            <section className="rounded-[22px] bg-white/90 p-4 shadow-[0_14px_40px_rgba(148,163,184,0.15)] ring-1 ring-white/70 sm:p-5">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Highest Weakness</p>
+              <h2 className="mt-2 font-display text-3xl font-black tracking-tight text-slate-950">{strongestWeakness.toFixed(1)}</h2>
+              <p className="text-[11px] text-slate-500">current pressure point score</p>
+              <div className="mt-4 inline-flex rounded-full bg-rose-50 px-3 py-1.5 text-[10px] font-bold text-rose-600">
+                Prioritize the top rows below
+              </div>
+            </section>
+          </div>
+
+          {!authUser?.codeforces_id ? (
+            <div className="rounded-[24px] border border-amber-200 bg-white/90 p-5 text-sm text-amber-700 shadow-sm">
+              Log in with a Codeforces-linked account to generate your personalized sheet.
             </div>
           ) : null}
-          {topicRecommendations.map((topicEntry) => (
-            <div key={topicEntry.topic} className="rounded-xl border border-slate-800 bg-[#1c2433] p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="text-sm font-semibold text-primary">
-                    {formatTopicLabel(topicEntry.topic_label || topicEntry.topic)}
-                  </h4>
-                  <p className="text-[11px] text-slate-400">
-                    Weakness {topicEntry.weakness_score ?? 0} • Recommended attempted{" "}
-                    {topicEntry.recommended_attempted_count ?? 0}/{topicEntry.recommended_count ?? 0}
-                  </p>
+
+          <section className="rounded-[22px] bg-white/90 p-4 shadow-[0_14px_40px_rgba(148,163,184,0.15)] ring-1 ring-white/70 sm:p-5">
+            <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-fixed text-primary">
+                  <span className="material-symbols-outlined">tune</span>
                 </div>
-                <span className="text-[11px] text-slate-500">
-                  Progress {topicEntry.recommended_progress_pct ?? 0}%
-                </span>
+                <div>
+                  <h3 className="font-display text-lg font-bold text-slate-900">Topics You Want To Master</h3>
+                  <p className="mt-1 text-[11px] text-slate-500">Choose the subjects that should shape your next recommendation refresh.</p>
+                </div>
               </div>
-              {Array.isArray(topicEntry.problems) && topicEntry.problems.length > 0 ? (
-                topicEntry.problems.map((problem) => {
-                  const difficulty = difficultyFromRating(problem.problem_rating);
-                  return (
-                    <div className="rounded-lg border border-slate-700 p-3 flex items-center justify-between gap-4" key={`${topicEntry.topic}-${problem.problem_key}`}>
-                      <div className="space-y-1">
-                        <a className="text-sm font-medium hover:text-primary transition-colors" href={problem.cf_link} rel="noreferrer" target="_blank">
-                          {problem.problem_name}
-                        </a>
-                        <div className="flex items-center gap-2 text-[10px] text-slate-500">
-                          <span className={`px-2 py-0.5 rounded uppercase tracking-wide font-bold ${difficulty.cls}`}>{difficulty.label}</span>
-                          <span>#{problem.problem_key}</span>
-                          <span>Rating {problem.problem_rating || "-"}</span>
-                          <span>Rank {problem.rank_in_topic || "-"}</span>
-                        </div>
-                      </div>
-                      <div className="flex flex-col items-end gap-2">
-                        {problem.status === "attempted" ? (
-                          <span className="text-[11px] font-semibold text-amber-300">Attempted</span>
-                        ) : null}
-                        <div className="flex items-center gap-2">
-                          <button
-                            className="rounded bg-primary px-2 py-1 text-[10px] font-semibold text-white"
-                            onClick={() => openProblemEditor(problem)}
-                            type="button"
-                          >
-                            Solve In App
-                          </button>
-                          <a
-                            className="rounded border border-slate-600 px-2 py-1 text-[10px] font-semibold text-slate-300 hover:border-slate-400"
-                            href={problem.cf_link}
-                            rel="noreferrer"
-                            target="_blank"
-                          >
-                            CF
-                          </a>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
-              ) : (
-                <p className="text-sm text-slate-400">No problems found for this topic.</p>
-              )}
+              <div className="flex flex-wrap gap-2">
+                <button className="rounded-xl border border-slate-200 bg-slate-100 px-3 py-2 text-[11px] font-bold text-slate-700 disabled:opacity-60" onClick={() => fetchSheet(true)} type="button" disabled={loading || !authUser?.codeforces_id}>
+                  <span className="material-symbols-outlined align-middle text-sm">refresh</span>
+                </button>
+                <button
+                  className="rounded-xl bg-primary px-4 py-2 text-[11px] font-bold text-white shadow-[0_10px_22px_rgba(57,44,193,0.20)] disabled:opacity-60"
+                  onClick={saveTopicSelection}
+                  type="button"
+                  disabled={savingTopics || loading || !authUser?.codeforces_id}
+                >
+                  <span className="material-symbols-outlined mr-1 align-middle text-sm">save</span>
+                  {savingTopics ? "Saving..." : "Apply Topics"}
+                </button>
+              </div>
             </div>
-          ))}
+            <div className="flex flex-wrap gap-3">
+              {(availableTopics || []).map((topic) => {
+                const active = selectedTopics.includes(topic);
+                return (
+                  <button
+                    key={topic}
+                    className={`rounded-full px-3.5 py-1.5 text-[11px] font-bold transition-colors ${
+                      active
+                        ? "bg-primary text-white shadow-[0_10px_24px_rgba(57,44,193,0.25)]"
+                        : "bg-slate-100 text-slate-600 hover:bg-primary/10 hover:text-primary"
+                    }`}
+                    onClick={() => toggleTopicSelection(topic)}
+                    type="button"
+                  >
+                    {formatTopicLabel(topic)}
+                  </button>
+                );
+              })}
+            </div>
+            {preferenceError ? <p className="mt-4 text-sm text-red-500">{preferenceError}</p> : null}
+          </section>
+
+          {loading ? (
+            <div className="rounded-[24px] border border-slate-200 bg-white/90 p-5 text-sm text-slate-500 shadow-sm">Generating recommendations...</div>
+          ) : null}
+          {sheetError ? <div className="rounded-[24px] border border-red-200 bg-white/90 p-5 text-sm text-red-500 shadow-sm">{sheetError}</div> : null}
+
+          <section className="rounded-[22px] bg-white/90 p-4 shadow-[0_14px_40px_rgba(148,163,184,0.15)] ring-1 ring-white/70 sm:p-5">
+            <div className="mb-5 flex items-center justify-between gap-3">
+              <div>
+                <h3 className="font-display text-lg font-bold text-slate-900">Selected Topic Progress</h3>
+                <p className="mt-1 text-[11px] text-slate-500">A quick view of where your current weak spots are concentrated.</p>
+              </div>
+              <div className="rounded-full bg-accent-purple px-2.5 py-1 text-[9px] font-bold text-white shadow-[0_8px_20px_rgba(124,58,237,0.25)]">
+                {topicProgressRows.length} Topics
+              </div>
+            </div>
+            {topicProgressRows.length === 0 ? (
+              <div className="rounded-[20px] border-2 border-dashed border-slate-300 bg-slate-100/70 p-6 text-center text-sm text-slate-500">
+                No topic progress available yet.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {topicProgressRows.map((topicRow) => (
+                  <div className="rounded-[18px] bg-slate-50 px-4 py-3" key={topicRow.topic}>
+                    <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                      <span className="font-bold text-slate-900">{topicRow.topic_label || formatTopicLabel(topicRow.topic)}</span>
+                      <span className="text-slate-500">
+                        {topicRow.solved_unique}/{topicRow.attempted_unique} solved
+                      </span>
+                    </div>
+                    <div className="h-2.5 w-full rounded-full bg-white">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-rose-400 to-primary"
+                        style={{ width: `${Math.min(Math.max(Number(topicRow.weakness_score || 0) * 35, 8), 100)}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section className="space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-200/70 pb-4">
+              <div>
+                <h3 className="font-display text-lg font-bold text-slate-900">Weak Topic Recommendations</h3>
+                <p className="mt-1 text-[11px] text-slate-500">Up to five practice problems per topic, organized by your current weakness profile.</p>
+              </div>
+              <div className="rounded-full bg-accent-purple px-2.5 py-1 text-[9px] font-bold text-white shadow-[0_8px_20px_rgba(124,58,237,0.25)]">
+                {totalProblems} Problems
+              </div>
+            </div>
+
+            {!loading && !sheetError && authUser?.codeforces_id && topicRecommendations.length === 0 ? (
+              <div className="rounded-[28px] border-2 border-dashed border-slate-300 bg-white/60 p-8 text-center shadow-sm">
+                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+                  <span className="material-symbols-outlined text-2xl">assignment_late</span>
+                </div>
+                <p className="font-display text-lg font-bold text-slate-900">No recommendations found</p>
+                <p className="mx-auto mt-1 max-w-md text-sm text-slate-500">
+                  Try applying a different topic combination and refresh the sheet to generate a new practice set.
+                </p>
+              </div>
+            ) : null}
+
+            {topicRecommendations.map((topicEntry) => (
+              <section className="rounded-[22px] bg-white/90 p-4 shadow-[0_14px_40px_rgba(148,163,184,0.15)] ring-1 ring-white/70 sm:p-5" key={topicEntry.topic}>
+                <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <h4 className="font-display text-lg font-bold text-slate-900">
+                      {formatTopicLabel(topicEntry.topic_label || topicEntry.topic)}
+                    </h4>
+                    <p className="mt-1 text-[11px] text-slate-500">
+                      Weakness {topicEntry.weakness_score ?? 0} - Recommended attempted {topicEntry.recommended_attempted_count ?? 0}/{topicEntry.recommended_count ?? 0}
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-primary/10 px-3 py-1 text-[10px] font-bold text-primary">
+                    Progress {topicEntry.recommended_progress_pct ?? 0}%
+                  </span>
+                </div>
+                {Array.isArray(topicEntry.problems) && topicEntry.problems.length > 0 ? (
+                  <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+                    {topicEntry.problems.map((problem) => renderSuggestedProblemCard(topicEntry, problem))}
+                  </div>
+                ) : (
+                  <div className="rounded-[20px] border-2 border-dashed border-slate-300 bg-slate-100/70 p-6 text-center text-sm text-slate-500">
+                    No problems found for this topic.
+                  </div>
+                )}
+              </section>
+            ))}
+          </section>
         </section>
       </main>
       <ProblemEditorModal
@@ -2289,7 +2372,7 @@ function PersonalizedSheetPage({
   );
 }
 
-function PersonalizedContestPage({ onGoDashboard, onOpenPersonalizedSheet, onOpenUpcoming, authUser, onContestUpdated }) {
+function PersonalizedContestPage({ onGoDashboard, onOpenPersonalizedSheet, onOpenUpcoming, onLogout, authUser, onContestUpdated }) {
   const [contestProblems, setContestProblems] = useState([]);
   const [contestLoading, setContestLoading] = useState(false);
   const [contestError, setContestError] = useState("");
@@ -2668,6 +2751,17 @@ function PersonalizedContestPage({ onGoDashboard, onOpenPersonalizedSheet, onOpe
     setEditorModalOpen(true);
   };
 
+  const handleLogoutClick = async () => {
+    const shouldLogout = await askConfirm({
+      title: "Logout?",
+      message: "Do you want to log out from CP Mentor on this device?",
+      confirmLabel: "Logout",
+      danger: true,
+    });
+    if (!shouldLogout) return;
+    onLogout?.();
+  };
+
   useEffect(() => {
     if (!contestWindow.isOpenNow || !contestWindow.windowStartMs || contestActive || contestStarted) {
       return;
@@ -2786,15 +2880,11 @@ function PersonalizedContestPage({ onGoDashboard, onOpenPersonalizedSheet, onOpe
             <span>Upcoming Contests</span>
           </button>
         </nav>
-        <div className="mt-auto space-y-1 border-t border-white/5 pt-4">
-          <div className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-[12px] font-medium text-slate-500">
-            <span className="material-symbols-outlined">settings</span>
-            <span>Settings</span>
-          </div>
-          <div className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-[12px] font-medium text-slate-500">
+        <div className="mt-auto border-t border-white/5 pt-4">
+          <button className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[12px] font-medium text-slate-500 transition-colors hover:bg-white/5 hover:text-white" onClick={handleLogoutClick} type="button">
             <span className="material-symbols-outlined">logout</span>
             <span>Logout</span>
-          </div>
+          </button>
         </div>
       </aside>
 
@@ -2976,7 +3066,7 @@ function PersonalizedContestPage({ onGoDashboard, onOpenPersonalizedSheet, onOpe
   );
 }
 
-function UpcomingContestsPage({ onGoDashboard, onOpenPersonalizedSheet, onOpenPersonalizedContest, authUser }) {
+function UpcomingContestsPage({ onGoDashboard, onOpenPersonalizedSheet, onOpenPersonalizedContest, onLogout, authUser }) {
   const [contests, setContests] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -2987,6 +3077,7 @@ function UpcomingContestsPage({ onGoDashboard, onOpenPersonalizedSheet, onOpenPe
   const [lastUpdated, setLastUpdated] = useState("");
   const [selectedDateKey, setSelectedDateKey] = useState("");
   const [selectedPlatform, setSelectedPlatform] = useState("all");
+  const { askConfirm, confirmDialogNode } = useThemedConfirm();
 
   const loadUpcomingContests = useCallback(async () => {
     setLoading(true);
@@ -3133,6 +3224,17 @@ function UpcomingContestsPage({ onGoDashboard, onOpenPersonalizedSheet, onOpenPe
     );
   };
 
+  const handleLogoutClick = async () => {
+    const shouldLogout = await askConfirm({
+      title: "Logout?",
+      message: "Do you want to log out from CP Mentor on this device?",
+      confirmLabel: "Logout",
+      danger: true,
+    });
+    if (!shouldLogout) return;
+    onLogout?.();
+  };
+
   return (
     <div className="min-h-screen bg-[#f4f6fb] text-slate-900 md:pl-52">
       <aside className="fixed left-0 top-0 hidden h-full w-52 flex-col bg-[#2d3133] px-3 py-4 text-white shadow-2xl md:flex">
@@ -3176,15 +3278,11 @@ function UpcomingContestsPage({ onGoDashboard, onOpenPersonalizedSheet, onOpenPe
             <span>Upcoming Contests</span>
           </div>
         </nav>
-        <div className="mt-auto space-y-1 border-t border-white/5 pt-4">
-          <div className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-[12px] font-medium text-slate-500">
-            <span className="material-symbols-outlined">settings</span>
-            <span>Settings</span>
-          </div>
-          <div className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-[12px] font-medium text-slate-500">
+        <div className="mt-auto border-t border-white/5 pt-4">
+          <button className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[12px] font-medium text-slate-500 transition-colors hover:bg-white/5 hover:text-white" onClick={handleLogoutClick} type="button">
             <span className="material-symbols-outlined">logout</span>
             <span>Logout</span>
-          </div>
+          </button>
         </div>
       </aside>
 
@@ -3377,6 +3475,7 @@ function UpcomingContestsPage({ onGoDashboard, onOpenPersonalizedSheet, onOpenPe
       >
         <span className="material-symbols-outlined text-2xl">{loading ? "progress_activity" : "add"}</span>
       </button>
+      {confirmDialogNode}
     </div>
   );
 }
@@ -3432,6 +3531,7 @@ function App() {
       <PersonalizedSheetPage
         authUser={authUser}
         cachedSheet={cacheKey ? sheetCacheByUser[cacheKey] : null}
+        onLogout={handleLogout}
         onSheetData={(sheet) => {
           const key = sheet?.codeforces_id || cacheKey;
           if (!key) return;
@@ -3448,6 +3548,7 @@ function App() {
     return (
       <PersonalizedContestPage
         authUser={authUser}
+        onLogout={handleLogout}
         onContestUpdated={(codeforcesId) => {
           if (!codeforcesId) return;
           setSheetCacheByUser((prev) => {
@@ -3474,6 +3575,7 @@ function App() {
     return (
       <UpcomingContestsPage
         authUser={authUser}
+        onLogout={handleLogout}
         onGoDashboard={() => setPage("dashboard")}
         onOpenPersonalizedContest={() => setPage("personalized-contest")}
         onOpenPersonalizedSheet={() => setPage("personalized-sheet")}
