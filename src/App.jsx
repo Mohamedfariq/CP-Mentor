@@ -336,25 +336,25 @@ function ConfirmDialog({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[95] flex items-center justify-center bg-slate-950/70 p-4">
-      <div className="w-full max-w-md rounded-xl border border-slate-700 bg-slate-900 shadow-2xl">
-        <div className="border-b border-slate-700 px-4 py-3">
-          <h3 className="text-sm font-semibold text-white">{title || "Please Confirm"}</h3>
+    <div className="fixed inset-0 z-[95] flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-[22px] border border-white/70 bg-[#f8f9fd] shadow-[0_24px_70px_rgba(15,23,42,0.22)]">
+        <div className="border-b border-slate-200 px-5 py-4">
+          <h3 className="font-display text-base font-bold text-slate-900">{title || "Please Confirm"}</h3>
         </div>
-        <div className="px-4 py-4">
-          <p className="text-sm text-slate-300">{message || "Are you sure?"}</p>
+        <div className="px-5 py-4">
+          <p className="text-sm leading-relaxed text-slate-600">{message || "Are you sure?"}</p>
         </div>
-        <div className="flex items-center justify-end gap-2 border-t border-slate-700 px-4 py-3">
+        <div className="flex items-center justify-end gap-2 border-t border-slate-200 px-5 py-4">
           <button
-            className="rounded border border-slate-600 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-800"
+            className="rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50"
             onClick={onCancel}
             type="button"
           >
             {cancelLabel}
           </button>
           <button
-            className={`rounded px-3 py-1.5 text-xs font-semibold text-white ${
-              danger ? "bg-red-600 hover:bg-red-500" : "bg-primary hover:bg-primary/90"
+            className={`rounded-xl px-3.5 py-2 text-xs font-semibold text-white transition-colors ${
+              danger ? "bg-red-500 hover:bg-red-600" : "bg-primary hover:bg-primary/90"
             }`}
             onClick={onConfirm}
             type="button"
@@ -521,7 +521,7 @@ function ProblemEditorModal({ open, problem, onClose }) {
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState("");
-  const [editorTheme, setEditorTheme] = useState("dark");
+  const [editorTheme, setEditorTheme] = useState("light");
   const [language, setLanguage] = useState("cpp23");
   const [code, setCode] = useState(() => starterCodeForLanguage("cpp23"));
   const [copyStatus, setCopyStatus] = useState("");
@@ -598,11 +598,11 @@ function ProblemEditorModal({ open, problem, onClose }) {
   const isDarkEditor = editorTheme === "dark";
   const panelClass = isDarkEditor
     ? "border-slate-700 bg-slate-900 text-slate-100"
-    : "border-slate-200 bg-white text-slate-900";
-  const cardClass = isDarkEditor ? "border-slate-700 bg-slate-950/60" : "border-slate-200 bg-slate-50";
+    : "border-white/70 bg-[#f5f7fc] text-slate-900";
+  const cardClass = isDarkEditor ? "border-slate-700 bg-slate-950/60" : "border-slate-200/80 bg-white/90";
   const inputClass = isDarkEditor
     ? "border-slate-700 bg-slate-950 text-slate-100 placeholder:text-slate-500"
-    : "border-slate-300 bg-white text-slate-900 placeholder:text-slate-400";
+    : "border-slate-200 bg-white text-slate-900 placeholder:text-slate-400";
   const submitUrl = details?.submit_url || buildCodeforcesSubmitUrl(cfLink);
   const sourceUrl = details?.source_url || cfLink;
   const title = details?.title || problem?.title || problem?.problem_name || "Problem";
@@ -698,11 +698,11 @@ function ProblemEditorModal({ open, problem, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/75 p-2 sm:p-4">
-      <div className={`flex h-[92vh] w-full max-w-7xl flex-col overflow-hidden rounded-xl border ${panelClass}`}>
-        <div className="flex items-center justify-between gap-3 border-b border-current/10 px-3 py-2 sm:px-4 sm:py-3">
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/45 p-2 sm:p-4 backdrop-blur-sm">
+      <div className={`flex h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-[24px] border shadow-[0_24px_70px_rgba(15,23,42,0.22)] ${panelClass}`}>
+        <div className="flex items-center justify-between gap-3 border-b border-current/10 px-4 py-3 sm:px-5">
           <div>
-            <h3 className="text-sm font-semibold sm:text-base">{title}</h3>
+            <h3 className="font-display text-sm font-bold sm:text-base">{title}</h3>
             <p className={`text-[11px] ${isDarkEditor ? "text-slate-400" : "text-slate-500"}`}>
               {problem?.topic ? `Topic: ${formatTopicLabel(problem.topic)} | ` : ""}
               {details?.time_limit ? `Time: ${details.time_limit}` : "Time: -"}
@@ -712,14 +712,14 @@ function ProblemEditorModal({ open, problem, onClose }) {
           </div>
           <div className="flex items-center gap-2">
             <button
-              className={`rounded px-2 py-1 text-xs font-semibold ${isDarkEditor ? "bg-slate-800 text-slate-200" : "bg-slate-200 text-slate-700"}`}
+              className={`rounded-xl px-3 py-1.5 text-[11px] font-semibold ${isDarkEditor ? "bg-slate-800 text-slate-200" : "border border-slate-200 bg-white text-slate-700"}`}
               onClick={() => setEditorTheme((prev) => (prev === "dark" ? "light" : "dark"))}
               type="button"
             >
-              {isDarkEditor ? "Light Mode" : "Dark Mode"}
+              {isDarkEditor ? "Light UI" : "Dark UI"}
             </button>
             <button
-              className={`rounded px-2 py-1 text-xs ${isDarkEditor ? "text-slate-300 hover:bg-slate-800" : "text-slate-700 hover:bg-slate-100"}`}
+              className={`rounded-xl px-3 py-1.5 text-[11px] font-semibold ${isDarkEditor ? "text-slate-300 hover:bg-slate-800" : "text-slate-600 hover:bg-white"}`}
               onClick={onClose}
               type="button"
             >
@@ -728,14 +728,14 @@ function ProblemEditorModal({ open, problem, onClose }) {
           </div>
         </div>
 
-        <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 p-3 lg:grid-cols-2 lg:gap-4 lg:p-4">
-          <section className={`min-h-0 overflow-y-auto rounded-lg border p-3 text-sm ${cardClass}`}>
+        <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 p-3 lg:grid-cols-[1.05fr_0.95fr] lg:gap-4 lg:p-4">
+          <section className={`min-h-0 overflow-y-auto rounded-[20px] border p-4 text-sm shadow-sm ${cardClass}`}>
             {loading ? <p className={isDarkEditor ? "text-slate-300" : "text-slate-600"}>Loading problem statement...</p> : null}
-            {fetchError ? <p className="text-sm text-red-400">{fetchError}</p> : null}
+            {fetchError ? <p className={`text-sm ${isDarkEditor ? "text-red-400" : "text-red-500"}`}>{fetchError}</p> : null}
             {!loading && !fetchError ? (
               <div className="space-y-4">
                 <div>
-                  <h4 className="mb-1 text-xs font-bold uppercase tracking-wide text-primary">Statement</h4>
+                  <h4 className="mb-1 text-[11px] font-bold uppercase tracking-[0.18em] text-primary">Statement</h4>
                   {details?.statement ? (
                     <pre className={`whitespace-pre-wrap text-xs leading-relaxed ${isDarkEditor ? "text-slate-200" : "text-slate-700"}`}>
                       {details.statement}
@@ -745,20 +745,20 @@ function ProblemEditorModal({ open, problem, onClose }) {
                   )}
                 </div>
                 <div>
-                  <h4 className="mb-1 text-xs font-bold uppercase tracking-wide text-primary">Input</h4>
+                  <h4 className="mb-1 text-[11px] font-bold uppercase tracking-[0.18em] text-primary">Input</h4>
                   <pre className={`whitespace-pre-wrap text-xs leading-relaxed ${isDarkEditor ? "text-slate-200" : "text-slate-700"}`}>
                     {details?.input_specification || "Input specification unavailable."}
                   </pre>
                 </div>
                 <div>
-                  <h4 className="mb-1 text-xs font-bold uppercase tracking-wide text-primary">Output</h4>
+                  <h4 className="mb-1 text-[11px] font-bold uppercase tracking-[0.18em] text-primary">Output</h4>
                   <pre className={`whitespace-pre-wrap text-xs leading-relaxed ${isDarkEditor ? "text-slate-200" : "text-slate-700"}`}>
                     {details?.output_specification || "Output specification unavailable."}
                   </pre>
                 </div>
                 {constraints.length > 0 ? (
                   <div>
-                    <h4 className="mb-1 text-xs font-bold uppercase tracking-wide text-primary">Constraints (Detected)</h4>
+                    <h4 className="mb-1 text-[11px] font-bold uppercase tracking-[0.18em] text-primary">Constraints</h4>
                     <ul className={`list-disc space-y-1 pl-4 text-xs ${isDarkEditor ? "text-slate-300" : "text-slate-700"}`}>
                       {constraints.map((item, idx) => (
                         <li key={`${idx}-${item}`}>{item}</li>
@@ -768,9 +768,9 @@ function ProblemEditorModal({ open, problem, onClose }) {
                 ) : null}
                 {samples.length > 0 ? (
                   <div className="space-y-3">
-                    <h4 className="text-xs font-bold uppercase tracking-wide text-primary">Sample Tests</h4>
+                    <h4 className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">Sample Tests</h4>
                     {samples.map((sample) => (
-                      <div className={`rounded border p-2 ${isDarkEditor ? "border-slate-700 bg-slate-950/70" : "border-slate-200 bg-white"}`} key={sample.index}>
+                      <div className={`rounded-2xl border p-3 ${isDarkEditor ? "border-slate-700 bg-slate-950/70" : "border-slate-200 bg-slate-50"}`} key={sample.index}>
                         <p className={`mb-1 text-[11px] font-semibold ${isDarkEditor ? "text-slate-300" : "text-slate-600"}`}>Sample {sample.index}</p>
                         <div className="grid gap-2 sm:grid-cols-2">
                           <div>
@@ -788,14 +788,14 @@ function ProblemEditorModal({ open, problem, onClose }) {
                 ) : null}
                 {details?.note ? (
                   <div>
-                    <h4 className="mb-1 text-xs font-bold uppercase tracking-wide text-primary">Note</h4>
+                    <h4 className="mb-1 text-[11px] font-bold uppercase tracking-[0.18em] text-primary">Note</h4>
                     <pre className={`whitespace-pre-wrap text-xs leading-relaxed ${isDarkEditor ? "text-slate-200" : "text-slate-700"}`}>
                       {details.note}
                     </pre>
                   </div>
                 ) : null}
                 {sourceUrl ? (
-                  <a className="text-xs text-primary underline" href={sourceUrl} rel="noreferrer" target="_blank">
+                  <a className="text-xs font-semibold text-primary underline" href={sourceUrl} rel="noreferrer" target="_blank">
                     Open original problem on Codeforces
                   </a>
                 ) : null}
@@ -803,12 +803,12 @@ function ProblemEditorModal({ open, problem, onClose }) {
             ) : null}
           </section>
 
-          <section className={`flex min-h-0 flex-col rounded-lg border p-3 ${cardClass}`}>
-            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-              <label className={`text-xs font-semibold ${isDarkEditor ? "text-slate-300" : "text-slate-700"}`}>
+          <section className={`flex min-h-0 flex-col rounded-[20px] border p-4 shadow-sm ${cardClass}`}>
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <label className={`text-[11px] font-semibold ${isDarkEditor ? "text-slate-300" : "text-slate-700"}`}>
                 Language
                 <select
-                  className={`ml-2 rounded border px-2 py-1 text-xs ${inputClass}`}
+                  className={`ml-2 rounded-xl border px-3 py-1.5 text-[11px] ${inputClass}`}
                   value={language}
                   onChange={(e) => handleLanguageChange(e.target.value)}
                 >
@@ -821,28 +821,28 @@ function ProblemEditorModal({ open, problem, onClose }) {
               </label>
               <div className="flex flex-wrap gap-2">
                 <button
-                  className="rounded bg-slate-700 px-2 py-1 text-xs font-semibold text-white hover:bg-slate-600"
+                  className={`${isDarkEditor ? "bg-slate-700 hover:bg-slate-600" : "bg-slate-900 hover:bg-slate-800"} rounded-xl px-3 py-1.5 text-[11px] font-semibold text-white`}
                   onClick={handleCopyCode}
                   type="button"
                 >
                   Copy Code
                 </button>
                 <button
-                  className="rounded border border-primary px-2 py-1 text-xs font-semibold text-primary hover:bg-primary/10"
+                  className="rounded-xl border border-primary px-3 py-1.5 text-[11px] font-semibold text-primary hover:bg-primary/10"
                   onClick={handleOpenSubmit}
                   type="button"
                 >
                   Open CF Submit
                 </button>
                 <button
-                  className="rounded bg-primary px-2 py-1 text-xs font-semibold text-white hover:bg-primary/90"
+                  className="rounded-xl bg-primary px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-primary/90"
                   onClick={handleCopyAndOpenSubmit}
                   type="button"
                 >
                   Copy + Open Submit
                 </button>
                 <button
-                  className="rounded bg-emerald-600 px-2 py-1 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="rounded-xl bg-emerald-600 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
                   onClick={handleRunCode}
                   type="button"
                   disabled={isRunning}
@@ -852,16 +852,16 @@ function ProblemEditorModal({ open, problem, onClose }) {
               </div>
             </div>
             {copyStatus ? <p className={`mb-2 text-xs ${isDarkEditor ? "text-emerald-300" : "text-emerald-700"}`}>{copyStatus}</p> : null}
-            {runError ? <p className={`mb-2 text-xs font-semibold ${isDarkEditor ? "text-red-400" : "text-red-600"}`}>❌ {runError}</p> : null}
+            {runError ? <p className={`mb-2 text-xs font-semibold ${isDarkEditor ? "text-red-400" : "text-red-600"}`}>Error: {runError}</p> : null}
             {testResults ? (
-              <div className={`mb-2 space-y-1 rounded border p-2 text-xs ${isDarkEditor ? "border-slate-700 bg-slate-950/50" : "border-slate-200 bg-slate-50"}`}>
-                <p className="font-semibold">Test Results:</p>
+              <div className={`mb-3 space-y-1 rounded-2xl border p-3 text-xs ${isDarkEditor ? "border-slate-700 bg-slate-950/50" : "border-slate-200 bg-slate-50"}`}>
+                <p className="font-semibold">Test Results</p>
                 {testResults.results && testResults.results.length > 0 ? (
                   <div className="space-y-1">
                     {testResults.results.map((result, idx) => (
                       <div key={`result-${idx}`} className="flex items-center gap-2">
                         <span className={result.passed ? "text-emerald-500 font-bold" : "text-red-500 font-bold"}>
-                          {result.passed ? "✓" : "✗"}
+                          {result.passed ? "PASS" : "FAIL"}
                         </span>
                         <span>Test {result.test_index}: {result.passed ? "Passed" : "Failed"}</span>
                         {!result.passed && result.expected_output ? (
@@ -876,13 +876,13 @@ function ProblemEditorModal({ open, problem, onClose }) {
                 {testResults.passed_count !== undefined && testResults.total_count !== undefined ? (
                   <p className="mt-2 border-t border-current/20 pt-1 font-semibold">
                     {testResults.passed_count}/{testResults.total_count} tests passed
-                    {testResults.passed_count === testResults.total_count ? " ✓" : ""}
+                    {testResults.passed_count === testResults.total_count ? " - all passing" : ""}
                   </p>
                 ) : null}
               </div>
             ) : null}
             <textarea
-              className={`min-h-0 flex-1 resize-none rounded border p-3 font-mono text-xs leading-relaxed outline-none focus:border-primary ${inputClass}`}
+              className={`min-h-0 flex-1 resize-none rounded-[18px] border p-3 font-mono text-xs leading-relaxed outline-none focus:border-primary ${inputClass}`}
               spellCheck={false}
               value={code}
               onChange={(e) => setCode(e.target.value)}
@@ -2705,354 +2705,261 @@ function PersonalizedContestPage({ onGoDashboard, onOpenPersonalizedSheet, onOpe
     (sum, problem) => sum + (problem.status === "solved" ? Number(problem.rating) || 0 : 0),
     0
   );
-  const progressPct = contestProblems.length
-    ? Math.round((solvedCount / contestProblems.length) * 100)
-    : 0;
   const scheduledLabel = nextAllowedLabel;
+  const contestDurationLabel =
+    configuredDurationSeconds === 3600 ? "1 Hour Master" : configuredDurationSeconds === 7200 ? "2 Hour Grind" : "3 Hour Classic";
+  const weekdayOptions = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+  const renderContestProblemCard = (problem, idx) => {
+    const difficulty = difficultyFromRating(problem.rating);
+    const letter = String.fromCharCode(65 + idx);
+    return (
+      <div className="rounded-[20px] border border-white/60 bg-white/90 p-3.5 shadow-[0_12px_28px_rgba(100,116,139,0.10)]" key={problem.problem_key}>
+        <div className="mb-3 flex items-start justify-between gap-3">
+          <div className="flex min-w-0 gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-[13px] font-bold text-primary">{letter}</div>
+            <div className="min-w-0">
+              <h4 className="truncate font-display text-[13px] font-bold text-slate-900">{problem.title}</h4>
+              <div className="mt-1 flex flex-wrap items-center gap-2">
+                <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${difficulty.cls}`}>{difficulty.label}</span>
+                <span className="text-[10px] text-slate-500">{formatTopicLabel(problem.topic)}</span>
+              </div>
+            </div>
+          </div>
+          <span className={`rounded-full px-2 py-1 text-[9px] font-bold ${problem.status === "solved" ? "status-solved" : "status-none"}`}>
+            {problem.status === "solved" ? "Solved" : "Pending"}
+          </span>
+        </div>
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">{problem.rating || "-"} pts</span>
+          <div className="flex items-center gap-2">
+            <button
+              className={`rounded-full px-3 py-1.5 text-[11px] font-bold transition-colors ${contestEnded ? "bg-slate-200 text-slate-500" : "bg-primary text-white"}`}
+              onClick={() => openProblemEditor(problem)}
+              type="button"
+              disabled={contestEnded}
+            >
+              Solve
+            </button>
+            <a
+              className={`rounded-full border px-3 py-1.5 text-[11px] font-bold ${contestEnded ? "border-slate-200 text-slate-400" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}
+              href={contestEnded ? "#" : problem.cf_link}
+              rel="noreferrer"
+              target={contestEnded ? undefined : "_blank"}
+              aria-disabled={contestEnded}
+            >
+              Open
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
-    <div className="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col font-display md:pl-64">
-      <aside className="fixed left-0 top-0 hidden h-full w-64 flex-col border-r border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-card-dark md:flex">
-        <div className="mb-8 flex items-center gap-3 px-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-white">
-            <span className="material-symbols-outlined">terminal</span>
+    <div className="min-h-screen bg-[#f4f6fb] text-slate-900 md:pl-52">
+      <aside className="fixed left-0 top-0 hidden h-full w-52 flex-col bg-[#2d3133] px-3 py-4 text-white shadow-2xl md:flex">
+        <div className="mb-7 flex items-center gap-2.5 px-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent-purple shadow-[0_8px_18px_rgba(57,44,193,0.35)]">
+            <span className="material-symbols-outlined filled-icon text-white">insights</span>
           </div>
-          <h1 className="text-xl font-bold tracking-tight">CP Tracker</h1>
+          <div>
+            <h1 className="font-display text-[15px] font-bold tracking-tight text-[#c8c5ff]">CP Mentor</h1>
+            <p className="text-[9px] font-bold uppercase tracking-[0.24em] text-slate-500">Elite Logic</p>
+          </div>
         </div>
-
-        <nav className="flex flex-1 flex-col gap-2">
-          <button
-            className="flex items-center gap-3 rounded-lg px-3 py-2 text-left text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
-            onClick={onGoDashboard}
-            type="button"
-          >
-            <span className="material-symbols-outlined">dashboard</span>
-            <span className="font-medium">Dashboard</span>
+        <nav className="flex flex-1 flex-col gap-1">
+          <button className="group flex items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[12px] font-medium text-slate-400 transition-all hover:bg-white/5 hover:text-white" onClick={onGoDashboard} type="button">
+            <span className="material-symbols-outlined transition-transform group-hover:scale-110">dashboard</span>
+            <span>Dashboard</span>
           </button>
-          <button
-            className="flex items-center gap-3 rounded-lg px-3 py-2 text-left text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
-            onClick={onOpenPersonalizedSheet}
-            type="button"
-          >
-            <span className="material-symbols-outlined">description</span>
-            <span className="font-medium">Personalized Sheet</span>
+          <button className="group flex items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[12px] font-medium text-slate-400 transition-all hover:bg-white/5 hover:text-white" onClick={onOpenPersonalizedSheet} type="button">
+            <span className="material-symbols-outlined transition-transform group-hover:scale-110">assignment</span>
+            <span>Personalized Sheet</span>
           </button>
-          <a className="flex items-center gap-3 rounded-lg bg-primary/10 px-3 py-2 text-primary" href="#">
-            <span className="material-symbols-outlined">emoji_events</span>
-            <span className="font-medium">Personalized Contest</span>
-          </a>
-          <button
-            className="flex items-center gap-3 rounded-lg px-3 py-2 text-left text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
-            onClick={onOpenUpcoming}
-            type="button"
-          >
-            <span className="material-symbols-outlined">calendar_month</span>
-            <span className="font-medium">Upcoming Contest</span>
+          <div className="flex items-center gap-2.5 rounded-xl border-l-4 border-primary bg-primary/10 px-3 py-2 text-[12px] font-medium text-white">
+            <span className="material-symbols-outlined text-primary-fixed-dim">emoji_events</span>
+            <span>Personalized Contest</span>
+          </div>
+          <button className="group flex items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[12px] font-medium text-slate-400 transition-all hover:bg-white/5 hover:text-white" onClick={onOpenUpcoming} type="button">
+            <span className="material-symbols-outlined transition-transform group-hover:scale-110">calendar_today</span>
+            <span>Upcoming Contests</span>
           </button>
         </nav>
+        <div className="mt-auto space-y-1 border-t border-white/5 pt-4">
+          <div className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-[12px] font-medium text-slate-500">
+            <span className="material-symbols-outlined">settings</span>
+            <span>Settings</span>
+          </div>
+          <div className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-[12px] font-medium text-slate-500">
+            <span className="material-symbols-outlined">logout</span>
+            <span>Logout</span>
+          </div>
+        </div>
       </aside>
 
-      <header className="sticky top-0 z-30 bg-background-dark/80 backdrop-blur-md px-4 pt-4 pb-2 border-b border-slate-800">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary text-2xl">trophy</span>
-            <h1 className="text-xl font-bold tracking-tight">Personalized Contest</h1>
-          </div>
-          <button
-            className="p-2 hover:bg-slate-800 rounded-full transition-colors disabled:opacity-60"
-            onClick={refreshContestStatus}
-            type="button"
-            disabled={refreshLoading || contestProblems.length === 0}
-          >
-            <span className="material-symbols-outlined text-slate-400">sync</span>
-          </button>
+      <header className="sticky top-0 z-30 flex h-12 items-center justify-between bg-[#f4f6fb]/90 px-4 backdrop-blur md:px-6">
+        <div className="hidden items-center gap-5 md:flex">
+          <span className="cursor-default border-b-2 border-primary pb-1 text-[11px] font-bold text-primary">Compete</span>
         </div>
-        <div className="flex gap-3 pb-2">
-          <button
-            className="flex-1 bg-gradient-to-r from-primary to-[#6366f1] text-white py-2.5 rounded-lg font-bold text-sm shadow-lg shadow-primary/20 flex items-center justify-center gap-2 disabled:opacity-60"
-            onClick={handleStartContest}
-            type="button"
-            disabled={contestActive || contestLoading || !contestOpenNow}
-          >
-            <span className="material-symbols-outlined text-sm">play_arrow</span>
-            {contestOpenNow ? "Start Contest" : "Contest Locked"}
-          </button>
-          <button
-            className={`flex-1 border py-2.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2 ${
-              contestActive ? "border-red-500/60 text-red-500" : "border-red-500/30 text-red-500/40 cursor-not-allowed"
-            }`}
-            onClick={handleEndContest}
-            type="button"
-            disabled={!contestActive}
-          >
-            <span className="material-symbols-outlined text-sm">stop</span>
-            End Contest
-          </button>
-          <button
-            className="px-4 py-2.5 border border-slate-700 bg-slate-800/50 hover:bg-slate-800 text-white rounded-lg font-bold text-sm transition-colors"
-            onClick={() => setContestManagerOpen(true)}
-            type="button"
-            title="Manage scheduled contests"
-          >
-            <span className="material-symbols-outlined">event_note</span>
-          </button>
+        <div className="flex items-center gap-3">
+          <button className="rounded-full p-2 text-slate-500 transition-colors hover:bg-white hover:text-primary" type="button"><span className="material-symbols-outlined">notifications</span></button>
+          <button className="rounded-full p-2 text-slate-500 transition-colors hover:bg-white hover:text-primary" type="button"><span className="material-symbols-outlined">help_outline</span></button>
+          <div className="flex h-6 w-6 items-center justify-center rounded-full border border-slate-300 bg-slate-800 text-[9px] font-bold uppercase text-white">
+            {String(authUser?.username || authUser?.email || authUser?.codeforces_id || "CP").slice(0, 2)}
+          </div>
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto px-4 py-6 space-y-6 pb-32">
-        <section className="contest-glass-card rounded-xl p-6 space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-            <label className="text-xs text-slate-400">
-              Weekday
-              <select
-                className="mt-1 w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-sm"
-                value={scheduleForm.weekday}
-                onChange={(e) => setScheduleForm((prev) => ({ ...prev, weekday: Number(e.target.value) }))}
-              >
-                {["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map((label, idx) => (
-                  <option key={label} value={idx}>{label}</option>
-                ))}
-              </select>
-            </label>
-            <label className="text-xs text-slate-400">
-              Hour
-              <input
-                className="mt-1 w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-sm"
-                type="number"
-                min={0}
-                max={23}
-                value={scheduleForm.hour}
-                onChange={(e) => setScheduleForm((prev) => ({ ...prev, hour: Number(e.target.value) }))}
-              />
-            </label>
-            <label className="text-xs text-slate-400">
-              Minute
-              <input
-                className="mt-1 w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-sm"
-                type="number"
-                min={0}
-                max={59}
-                value={scheduleForm.minute}
-                onChange={(e) => setScheduleForm((prev) => ({ ...prev, minute: Number(e.target.value) }))}
-              />
-            </label>
-            <label className="text-xs text-slate-400">
-              Duration
-              <select
-                className="mt-1 w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-sm"
-                value={scheduleForm.contestDurationSeconds}
-                onChange={(e) =>
-                  setScheduleForm((prev) => ({ ...prev, contestDurationSeconds: Number(e.target.value) }))
-                }
-              >
-                <option value={10800}>3 Hours (Beginner)</option>
-                <option value={7200}>2 Hours (Intermediate)</option>
-                <option value={3600}>1 Hour (Master)</option>
-              </select>
-            </label>
+      <main className="mx-auto max-w-5xl px-4 py-5 md:px-6">
+        <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h1 className="font-display text-2xl font-extrabold tracking-tight text-slate-950">Personalized Contest</h1>
+            <p className="mt-1 text-[11px] text-slate-500">Configure your weekly competitive environment.</p>
           </div>
-          <div className="flex gap-2">
-            <button
-              className="px-3 py-1.5 rounded bg-primary text-white text-xs font-semibold disabled:opacity-60"
-              onClick={saveWeeklySchedule}
-              type="button"
-              disabled={scheduleSaving || scheduleLoading}
-            >
-              {scheduleSaving ? "Saving..." : "Save Weekly Schedule"}
-            </button>
-            <button
-              className="px-3 py-1.5 rounded border border-slate-600 text-slate-200 text-xs font-semibold disabled:opacity-60"
-              onClick={loadWeeklySchedule}
-              type="button"
-              disabled={scheduleLoading}
-            >
-              {scheduleLoading ? "Refreshing..." : "Refresh Schedule"}
-            </button>
-          </div>
-          {!contestWindow.hasSchedule ? (
-            <p className="text-xs text-amber-300">
-              Set your weekly schedule to unlock contest availability.
-            </p>
-          ) : !contestOpenNow ? (
-            <p className="text-xs text-amber-300">
-              Contest is locked outside scheduled time. Next window opens at {nextAllowedLabel}.
-            </p>
-          ) : (
-            <p className="text-xs text-emerald-300">
-              Contest is currently available until {new Date(contestWindow.windowEndMs).toLocaleString()}.
-            </p>
-          )}
-          {scheduleError ? <p className="text-xs text-red-400">{scheduleError}</p> : null}
-          {completeSaving ? <p className="text-xs text-slate-400">Saving contest result and refreshing cluster...</p> : null}
-        </section>
-
-        {contestEnded && contestStarted ? (
-          <section className="contest-glass-card rounded-xl p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold text-white">Contest Summary</h3>
-              <span className="text-xs text-slate-400 font-medium">
-                {scoredPoints}/{totalPoints} Points
-              </span>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2 rounded-xl bg-[#2d3133] px-3 py-2 text-white shadow-sm">
+              <span className="material-symbols-outlined text-primary-fixed-dim text-base">hourglass_empty</span>
+              <span className="font-display text-[13px] font-black tracking-tight">{contestStarted ? formatCountdown(remainingSeconds) : "00:00:00"}</span>
             </div>
-            <div className="text-xs text-slate-400">Time Taken: {formatCountdown(endedElapsedSeconds)}</div>
-            <div className="space-y-3">
-              {contestProblems.map((problem) => (
-                <div className="flex items-center justify-between text-sm" key={problem.problem_key}>
-                  <div>
-                    <a
-                      className="font-medium text-white hover:text-primary transition-colors"
-                      href={problem.cf_link}
-                      rel="noreferrer"
-                      target="_blank"
-                    >
-                      {problem.title}
-                    </a>
-                    <p className="text-[10px] text-slate-400">{formatTopicLabel(problem.topic)}</p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs text-slate-400">{problem.rating || 0} pts</span>
-                    <span
-                      className={`text-[10px] font-bold px-2 py-1 rounded-full ${
-                        problem.status === "solved" ? "status-solved" : "status-none"
-                      }`}
-                    >
-                      {problem.status === "solved" ? "Solved" : "Unsolved"}
-                    </span>
-                  </div>
+            <button
+              className={`rounded-xl border px-4 py-2 text-[11px] font-bold transition-colors ${contestActive ? "border-red-200 bg-white text-red-500 hover:bg-red-50" : "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400"}`}
+              onClick={handleEndContest}
+              type="button"
+              disabled={!contestActive}
+            >
+              <span className="material-symbols-outlined mr-1 align-middle text-sm">stop_circle</span>
+              End Contest
+            </button>
+          </div>
+        </div>
+        <div className="space-y-5 pb-16">
+          <section className="rounded-[22px] bg-white/90 p-4 shadow-[0_14px_40px_rgba(148,163,184,0.15)] ring-1 ring-white/70 sm:p-5">
+            <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-fixed text-primary">
+                  <span className="material-symbols-outlined">schedule</span>
                 </div>
-              ))}
+                <h3 className="font-display text-lg font-bold text-slate-900">Weekly Mastery Schedule</h3>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button className="rounded-xl bg-primary px-4 py-2 text-[11px] font-bold text-white shadow-[0_10px_22px_rgba(57,44,193,0.20)] disabled:opacity-60" onClick={saveWeeklySchedule} type="button" disabled={scheduleSaving || scheduleLoading}>
+                  <span className="material-symbols-outlined mr-1 align-middle text-sm">save</span>
+                  {scheduleSaving ? "Saving..." : "Save Schedule"}
+                </button>
+                <button className="rounded-xl border border-slate-200 bg-slate-100 px-3 py-2 text-[11px] font-bold text-slate-700 disabled:opacity-60" onClick={loadWeeklySchedule} type="button" disabled={scheduleLoading}>
+                  <span className="material-symbols-outlined align-middle text-sm">refresh</span>
+                </button>
+                <button className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-[11px] font-bold text-slate-700" onClick={() => setContestManagerOpen(true)} type="button" title="Manage scheduled contests">
+                  <span className="material-symbols-outlined align-middle text-sm">event_note</span>
+                </button>
+              </div>
             </div>
-            <div className="pt-2">
-              <button
-                className="rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white disabled:opacity-60"
-                onClick={handleGenerateNextContestSet}
-                type="button"
-                disabled={contestLoading || !contestOpenNow}
-              >
-                {contestLoading ? "Preparing..." : "Generate Next Contest Set"}
-              </button>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <label className="space-y-1.5">
+                <span className="block px-1 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Weekday</span>
+                <select className="w-full rounded-xl border-none bg-slate-100 px-3 py-2.5 text-sm font-medium text-slate-900 focus:ring-2 focus:ring-primary/20" value={scheduleForm.weekday} onChange={(e) => setScheduleForm((prev) => ({ ...prev, weekday: Number(e.target.value) }))}>
+                  {weekdayOptions.map((label, idx) => <option key={label} value={idx}>{label}</option>)}
+                </select>
+              </label>
+              <label className="space-y-1.5">
+                <span className="block px-1 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Hour</span>
+                <input className="w-full rounded-xl border-none bg-slate-100 px-3 py-2.5 text-sm font-medium text-slate-900 focus:ring-2 focus:ring-primary/20" type="number" min={0} max={23} value={scheduleForm.hour} onChange={(e) => setScheduleForm((prev) => ({ ...prev, hour: Number(e.target.value) }))} />
+              </label>
+              <label className="space-y-1.5">
+                <span className="block px-1 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Minute</span>
+                <input className="w-full rounded-xl border-none bg-slate-100 px-3 py-2.5 text-sm font-medium text-slate-900 focus:ring-2 focus:ring-primary/20" type="number" min={0} max={59} value={scheduleForm.minute} onChange={(e) => setScheduleForm((prev) => ({ ...prev, minute: Number(e.target.value) }))} />
+              </label>
+              <label className="space-y-1.5">
+                <span className="block px-1 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Duration</span>
+                <select className="w-full rounded-xl border-none bg-slate-100 px-3 py-2.5 text-sm font-medium text-slate-900 focus:ring-2 focus:ring-primary/20" value={scheduleForm.contestDurationSeconds} onChange={(e) => setScheduleForm((prev) => ({ ...prev, contestDurationSeconds: Number(e.target.value) }))}>
+                  <option value={3600}>1 Hour Master</option>
+                  <option value={7200}>2 Hour Grind</option>
+                  <option value={10800}>3 Hour Classic</option>
+                </select>
+              </label>
+            </div>
+            <div className="mt-4 flex flex-wrap items-center gap-3 text-[11px]">
+              {!contestWindow.hasSchedule ? <span className="rounded-full bg-amber-50 px-3 py-1.5 font-semibold text-amber-700">Set your weekly schedule to unlock contest availability.</span> : null}
+              {contestWindow.hasSchedule && !contestOpenNow ? <span className="rounded-full bg-amber-50 px-3 py-1.5 font-semibold text-amber-700">Contest is locked until {scheduledLabel}.</span> : null}
+              {contestOpenNow ? <span className="rounded-full bg-emerald-50 px-3 py-1.5 font-semibold text-emerald-700">Contest window is open now. Duration: {contestDurationLabel}.</span> : null}
+              {scheduleError ? <span className="text-red-500">{scheduleError}</span> : null}
+              {completeSaving ? <span className="text-slate-500">Saving contest result and refreshing cluster...</span> : null}
             </div>
           </section>
-        ) : (
-          <>
-            <section className="relative group">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/30 to-purple-500/30 rounded-xl blur opacity-30 group-hover:opacity-50 transition duration-1000"></div>
-              <div className="relative contest-glass-card rounded-xl p-6 flex flex-col items-center justify-center text-center overflow-hidden">
-                <div className="absolute top-4 right-4 flex items-center gap-1.5">
-                  {contestActive ? (
-                    <>
-                      <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-                      </span>
-                      <span className="text-[10px] font-bold text-red-500 tracking-widest uppercase">Live</span>
-                    </>
-                  ) : (
-                    <span className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">
-                      {contestEnded ? "Ended" : "Idle"}
-                    </span>
-                  )}
+
+          {contestEnded && contestStarted ? (
+            <section className="rounded-[22px] bg-white/90 p-4 shadow-[0_14px_40px_rgba(148,163,184,0.15)] ring-1 ring-white/70 sm:p-5">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="font-display text-lg font-bold text-slate-900">Contest Summary</h3>
+                  <p className="mt-1 text-[11px] text-slate-500">Time Taken: {formatCountdown(endedElapsedSeconds)}</p>
                 </div>
-                <h2 className="text-4xl md:text-5xl font-mono font-extrabold tracking-widest text-white drop-shadow-sm">
-                  {contestStarted ? formatCountdown(remainingSeconds) : "00:00:00"}
-                </h2>
-                <p className="text-slate-400 text-sm mt-2 font-medium">Contest Time Remaining</p>
-                <div className="mt-4 w-full bg-slate-800/50 h-1 rounded-full overflow-hidden">
-                  <div
-                    className="bg-primary h-full"
-                    style={{
-                      width: `${contestStarted ? Math.max(0, Math.min(100, (remainingSeconds / Math.max(1, activeDurationSeconds)) * 100)) : 0}%`,
-                      boxShadow: "0 0 8px #256af4",
-                    }}
-                  ></div>
-                </div>
+                <span className="rounded-full bg-primary/10 px-3 py-1 text-[10px] font-bold text-primary">{scoredPoints}/{totalPoints} points</span>
+              </div>
+              <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+                {contestProblems.map((problem, idx) => renderContestProblemCard(problem, idx))}
+              </div>
+              <div className="mt-4">
+                <button className="rounded-xl bg-primary px-4 py-2 text-[11px] font-bold text-white disabled:opacity-60" onClick={handleGenerateNextContestSet} type="button" disabled={contestLoading || !contestOpenNow}>
+                  {contestLoading ? "Preparing..." : "Generate Next Contest Set"}
+                </button>
               </div>
             </section>
-
+          ) : (
             <section className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold">Problems</h3>
-                <span className="text-xs text-slate-500 font-medium">{contestProblems.length} Total</span>
-              </div>
-
-              {contestLoading ? (
-                <div className="contest-glass-card rounded-xl p-4 text-sm text-slate-400">Loading contest problems...</div>
-              ) : null}
-              {contestError ? (
-                <div className="contest-glass-card rounded-xl p-4 text-sm text-red-400">{contestError}</div>
-              ) : null}
-              {!contestStarted && !contestLoading && !contestError ? (
-                <div className="contest-glass-card rounded-xl p-6 text-center text-sm text-slate-400">
-                  {contestOpenNow
-                    ? "Start the contest to reveal your four weakest-topic problems."
-                    : `Contest is locked. It opens at ${nextAllowedLabel}.`}
-                </div>
-              ) : null}
-
-              {contestStarted
-                ? contestProblems.map((problem, idx) => {
-                    const difficulty = difficultyFromRating(problem.rating);
-                    const letter = String.fromCharCode(65 + idx);
-                    return (
-                      <div className="contest-glass-card rounded-xl p-4 transition-all active:scale-[0.98]" key={problem.problem_key}>
-                        <div className="flex justify-between items-start mb-3">
-                          <div className="flex gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center text-primary font-bold">
-                              {letter}
-                            </div>
-                            <div>
-                              <h4 className="font-bold text-white">{problem.title}</h4>
-                              <div className="flex items-center gap-2 mt-1">
-                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${difficulty.cls}`}>
-                                  {difficulty.label}
-                                </span>
-                                <span className="text-[10px] text-slate-400">- {formatTopicLabel(problem.topic)}</span>
-                              </div>
-                            </div>
-                          </div>
-                          {problem.status === "solved" ? (
-                            <span className="status-solved text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1">
-                              <span className="material-symbols-outlined text-xs">check_circle</span> Solved
-                            </span>
-                          ) : (
-                            <span className="status-none text-[10px] font-bold px-2 py-1 rounded-full">Not Attempted</span>
-                          )}
-                        </div>
-                        <div className="flex items-center justify-between mt-4">
-                          <span className="text-xs font-semibold text-slate-400 tracking-wider">{problem.rating || "-"} PTS</span>
-                          <div className="flex items-center gap-2">
-                            <button
-                              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${
-                                contestEnded ? "bg-slate-700 text-slate-400 cursor-not-allowed" : "bg-primary text-white"
-                              }`}
-                              onClick={() => openProblemEditor(problem)}
-                              type="button"
-                              disabled={contestEnded}
-                            >
-                              Solve In App
-                            </button>
-                            <a
-                              className={`rounded-lg border px-3 py-1.5 text-xs font-bold transition-colors ${
-                                contestEnded
-                                  ? "border-slate-700 text-slate-500 cursor-not-allowed"
-                                  : "border-slate-500 text-slate-200 hover:border-slate-300"
-                              }`}
-                              href={contestEnded ? "#" : problem.cf_link}
-                              rel="noreferrer"
-                              target={contestEnded ? undefined : "_blank"}
-                              aria-disabled={contestEnded}
-                            >
-                              Open CF
-                            </a>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })
-                : null}
+              {contestStarted ? (
+                <>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <h3 className="font-display text-lg font-bold text-slate-900">Live Contest Problems</h3>
+                      <p className="mt-1 text-[11px] text-slate-500">{contestActive ? "Contest is live. Solve and refresh status as you go." : "Contest ready."}</p>
+                    </div>
+                    <button className="rounded-xl bg-primary px-4 py-2 text-[11px] font-bold text-white disabled:opacity-60" onClick={refreshContestStatus} type="button" disabled={refreshLoading || contestProblems.length === 0}>
+                      <span className="material-symbols-outlined mr-1 align-middle text-sm">refresh</span>
+                      {refreshLoading ? "Refreshing..." : "Refresh Status"}
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+                    {contestProblems.map((problem, idx) => renderContestProblemCard(problem, idx))}
+                  </div>
+                </>
+              ) : (
+                <section className="rounded-[22px] border-2 border-dashed border-slate-300 bg-slate-100/70 p-8 text-center">
+                  <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-slate-200">
+                    <span className="material-symbols-outlined filled-icon text-3xl text-slate-400">lock</span>
+                  </div>
+                  <h3 className="font-display text-xl font-bold text-slate-900">Contest is locked</h3>
+                  <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-slate-500">
+                    {contestOpenNow ? "Your contest window is open. Start the session whenever you're ready." : <>No contests active for now. The session automatically opens at <span className="font-bold text-primary">{scheduledLabel}</span>.</>}
+                  </p>
+                  <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                    <button className="rounded-xl bg-primary px-5 py-2.5 text-[11px] font-bold text-white shadow-[0_10px_22px_rgba(57,44,193,0.20)] disabled:cursor-not-allowed disabled:opacity-60" onClick={handleStartContest} type="button" disabled={contestActive || contestLoading || !contestOpenNow}>
+                      <span className="material-symbols-outlined mr-1 align-middle text-sm">play_arrow</span>
+                      {contestOpenNow ? (contestLoading ? "Preparing..." : "Start Contest") : "Contest Locked"}
+                    </button>
+                    <button className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-[11px] font-bold text-slate-700" onClick={() => setContestManagerOpen(true)} type="button">
+                      <span className="material-symbols-outlined mr-1 align-middle text-sm">event_note</span>
+                      Manage Schedule
+                    </button>
+                  </div>
+                  <div className="mx-auto mt-8 w-full max-w-2xl space-y-3">
+                    <div className="flex h-11 items-center justify-between rounded-xl bg-white/70 px-5">
+                      <div className="h-2.5 w-40 rounded-full bg-slate-200"></div>
+                      <div className="h-5 w-14 rounded-full bg-slate-200"></div>
+                    </div>
+                    <div className="flex h-11 items-center justify-between rounded-xl bg-white/70 px-5">
+                      <div className="h-2.5 w-56 rounded-full bg-slate-200"></div>
+                      <div className="h-5 w-14 rounded-full bg-slate-200"></div>
+                    </div>
+                  </div>
+                </section>
+              )}
+              {contestLoading ? <div className="rounded-[20px] bg-white/90 p-4 text-sm text-slate-500 shadow-sm">Loading contest problems...</div> : null}
+              {contestError ? <div className="rounded-[20px] border border-red-200 bg-white/90 p-4 text-sm text-red-500 shadow-sm">{contestError}</div> : null}
             </section>
-          </>
-        )}
+          )}
+        </div>
       </main>
       <ProblemEditorModal
         open={editorModalOpen}
@@ -3065,44 +2972,6 @@ function PersonalizedContestPage({ onGoDashboard, onOpenPersonalizedSheet, onOpe
         onClose={() => setContestManagerOpen(false)}
       />
       {confirmDialogNode}
-
-      <div className="fixed bottom-0 left-0 right-0 z-40 md:left-64">
-        <div className="bg-background-dark/95 border-t border-slate-800 px-4 py-3 backdrop-blur-sm">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-white">{solvedCount}/{contestProblems.length} Solved</span>
-            <span className="text-[10px] text-slate-400 flex items-center gap-1 italic">
-              {contestActive
-                ? "Contest live"
-                : contestEnded
-                  ? "Contest ended"
-                  : contestOpenNow
-                    ? "Ready when you are"
-                    : "Locked until scheduled time"}
-            </span>
-          </div>
-          <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-            <div className="bg-primary h-full transition-all duration-500" style={{ width: `${progressPct}%` }}></div>
-          </div>
-        </div>
-        <nav className="flex justify-between bg-slate-900 border-t border-slate-800 px-6 py-3 md:hidden">
-          <button className="flex flex-col items-center gap-1 text-slate-500" onClick={onGoDashboard} type="button">
-            <span className="material-symbols-outlined">dashboard</span>
-            <span className="text-[10px] font-medium">Dashboard</span>
-          </button>
-          <button className="flex flex-col items-center gap-1 text-slate-500" onClick={onOpenPersonalizedSheet} type="button">
-            <span className="material-symbols-outlined">list_alt</span>
-            <span className="text-[10px] font-medium">Sheet</span>
-          </button>
-          <a className="flex flex-col items-center gap-1 text-primary" href="#">
-            <span className="material-symbols-outlined filled-icon">trophy</span>
-            <span className="text-[10px] font-bold">Contest</span>
-          </a>
-          <button className="flex flex-col items-center gap-1 text-slate-500" onClick={onOpenUpcoming} type="button">
-            <span className="material-symbols-outlined">event_note</span>
-            <span className="text-[10px] font-medium">Upcoming</span>
-          </button>
-        </nav>
-      </div>
     </div>
   );
 }
@@ -3117,6 +2986,7 @@ function UpcomingContestsPage({ onGoDashboard, onOpenPersonalizedSheet, onOpenPe
   });
   const [lastUpdated, setLastUpdated] = useState("");
   const [selectedDateKey, setSelectedDateKey] = useState("");
+  const [selectedPlatform, setSelectedPlatform] = useState("all");
 
   const loadUpcomingContests = useCallback(async () => {
     setLoading(true);
@@ -3142,229 +3012,371 @@ function UpcomingContestsPage({ onGoDashboard, onOpenPersonalizedSheet, onOpenPe
     loadUpcomingContests();
   }, [loadUpcomingContests]);
 
+  useEffect(() => {
+    if (selectedDateKey) return;
+    const firstUpcoming = contests
+      .map((contest) => new Date(contest.start_time))
+      .filter((date) => !Number.isNaN(date.getTime()))
+      .sort((a, b) => a.getTime() - b.getTime())[0];
+    if (firstUpcoming) {
+      setSelectedDateKey(dateKey(firstUpcoming));
+      setCalendarMonth(new Date(firstUpcoming.getFullYear(), firstUpcoming.getMonth(), 1));
+    }
+  }, [contests, selectedDateKey]);
+
   const contestDates = new Set(
     contests
+      .filter((contest) => selectedPlatform === "all" || contest.platform === selectedPlatform)
       .map((contest) => new Date(contest.start_time))
       .filter((date) => !Number.isNaN(date.getTime()))
       .map((date) => dateKey(date))
   );
   const calendarDays = buildCalendarDays(calendarMonth, contestDates);
   const monthLabel = new Intl.DateTimeFormat(undefined, { month: "long", year: "numeric" }).format(calendarMonth);
+  const platformFilteredContests =
+    selectedPlatform === "all" ? contests : contests.filter((contest) => contest.platform === selectedPlatform);
   const filteredContests = selectedDateKey
-    ? contests.filter((contest) => {
+    ? platformFilteredContests.filter((contest) => {
         const date = new Date(contest.start_time);
         return !Number.isNaN(date.getTime()) && dateKey(date) === selectedDateKey;
       })
-    : contests;
-  const listLabel = selectedDateKey
-    ? `${filteredContests.length} Contest${filteredContests.length === 1 ? "" : "s"} on ${selectedDateKey}`
-    : `${contests.length} Contest${contests.length === 1 ? "" : "s"} Found`;
+    : platformFilteredContests;
+  const selectedDateLabel = selectedDateKey
+    ? new Date(`${selectedDateKey}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" })
+    : "All Dates";
+  const monthContestCount = platformFilteredContests.filter((contest) => {
+    const date = new Date(contest.start_time);
+    return !Number.isNaN(date.getTime()) &&
+      date.getFullYear() === calendarMonth.getFullYear() &&
+      date.getMonth() === calendarMonth.getMonth();
+  }).length;
+  const visibleContestCountLabel = `${filteredContests.length} Contest${filteredContests.length === 1 ? "" : "s"} Found`;
+  const platformChips = [
+    { key: "all", label: "All Platforms" },
+    { key: "Codeforces", label: "Codeforces" },
+    { key: "LeetCode", label: "LeetCode" },
+  ];
+  const weekdayLabels = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+
+  const renderContestCard = (contest) => {
+    const style = platformStyles[contest.platform] || platformStyles.Codeforces;
+    const contestLink = contest.register_url || contest.registration_url || contest.url || "#";
+    const startsAt = contest.start_time
+      ? new Date(contest.start_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })
+      : "TBD";
+    const difficulty = contest.platform === "LeetCode" ? "Hard" : "Easy";
+    const difficultyClasses =
+      difficulty === "Hard"
+        ? "bg-accent-rose/10 text-accent-rose"
+        : "bg-sky-500/10 text-sky-500";
+    const subtitle =
+      contest.platform === "LeetCode"
+        ? `Focus: ${contest.phase || "Competitive Programming"}`
+        : contest.phase || formatTimeUntil(contest.start_time);
+
+    return (
+      <div
+        className="rounded-[20px] border border-white/60 bg-white/90 p-3.5 shadow-[0_12px_28px_rgba(100,116,139,0.10)] transition-all hover:-translate-y-0.5 hover:shadow-[0_16px_40px_rgba(57,44,193,0.12)]"
+        key={`${contest.platform}-${contest.id || contest.title}-${contest.start_time}`}
+      >
+        <div className="flex gap-2.5">
+          <div
+            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
+              contest.platform === "LeetCode" ? "bg-orange-50 text-orange-500" : "bg-indigo-50 text-primary"
+            }`}
+          >
+            <span className="material-symbols-outlined text-[18px]">
+              {contest.platform === "LeetCode" ? "terminal" : "code"}
+            </span>
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="mb-1 flex items-start justify-between gap-2">
+              <h3 className="font-display text-[13px] font-bold leading-tight text-slate-900">
+                {contest.title}
+              </h3>
+              <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider ${difficultyClasses}`}>
+                {difficulty}
+              </span>
+            </div>
+            <p className="mb-2.5 text-[11px] text-slate-500">{subtitle}</p>
+            <div className="mb-3 flex flex-wrap items-center gap-3 text-[10px] text-slate-500">
+              <div className="flex items-center gap-1.5">
+                <span className={`material-symbols-outlined text-[15px] ${style.accent}`}>schedule</span>
+                <span>{startsAt} UTC</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className={`material-symbols-outlined text-[15px] ${style.accent}`}>timelapse</span>
+                <span>{formatDuration(contest.duration_seconds)}</span>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <a
+                className="flex-1 rounded-full bg-gradient-to-r from-primary to-accent-purple py-1.5 text-center text-[11px] font-bold text-white shadow-[0_8px_18px_rgba(57,44,193,0.28)] transition-transform active:scale-[0.98]"
+                href={contestLink}
+                rel="noreferrer"
+                target={contestLink && contestLink !== "#" ? "_blank" : undefined}
+              >
+                Register
+              </a>
+              <a
+                className="rounded-full border border-slate-200 px-3 py-1.5 text-[11px] font-semibold text-slate-600 transition-colors hover:bg-slate-50"
+                href={contestLink}
+                rel="noreferrer"
+                target={contestLink && contestLink !== "#" ? "_blank" : undefined}
+              >
+                Details
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
-    <div className="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col md:pl-64">
-      <aside className="fixed left-0 top-0 hidden h-full w-64 flex-col border-r border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-card-dark md:flex">
-        <div className="mb-8 flex items-center gap-3 px-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-white">
-            <span className="material-symbols-outlined">terminal</span>
+    <div className="min-h-screen bg-[#f4f6fb] text-slate-900 md:pl-52">
+      <aside className="fixed left-0 top-0 hidden h-full w-52 flex-col bg-[#2d3133] px-3 py-4 text-white shadow-2xl md:flex">
+        <div className="mb-7 flex items-center gap-2.5 px-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent-purple shadow-[0_8px_18px_rgba(57,44,193,0.35)]">
+            <span className="material-symbols-outlined filled-icon text-white">insights</span>
           </div>
-          <h1 className="text-xl font-bold tracking-tight">CP Tracker</h1>
+          <div>
+            <h1 className="font-display text-[15px] font-bold tracking-tight text-[#c8c5ff]">CP Mentor</h1>
+            <p className="text-[9px] font-bold uppercase tracking-[0.24em] text-slate-500">Elite Logic</p>
+          </div>
         </div>
 
-        <nav className="flex flex-1 flex-col gap-2">
+        <nav className="flex flex-1 flex-col gap-1">
           <button
-            className="flex items-center gap-3 rounded-lg px-3 py-2 text-left text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+            className="group flex items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[12px] font-medium text-slate-400 transition-all hover:bg-white/5 hover:text-white"
             onClick={onGoDashboard}
             type="button"
           >
-            <span className="material-symbols-outlined">dashboard</span>
-            <span className="font-medium">Dashboard</span>
+            <span className="material-symbols-outlined transition-transform group-hover:scale-110">dashboard</span>
+            <span>Dashboard</span>
           </button>
           <button
-            className="flex items-center gap-3 rounded-lg px-3 py-2 text-left text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+            className="group flex items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[12px] font-medium text-slate-400 transition-all hover:bg-white/5 hover:text-white"
             onClick={onOpenPersonalizedSheet}
             type="button"
           >
-            <span className="material-symbols-outlined">description</span>
-            <span className="font-medium">Personalized Sheet</span>
+            <span className="material-symbols-outlined transition-transform group-hover:scale-110">assignment</span>
+            <span>Personalized Sheet</span>
           </button>
           <button
-            className="flex items-center gap-3 rounded-lg px-3 py-2 text-left text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+            className="group flex items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[12px] font-medium text-slate-400 transition-all hover:bg-white/5 hover:text-white"
             onClick={onOpenPersonalizedContest}
             type="button"
           >
-            <span className="material-symbols-outlined">emoji_events</span>
-            <span className="font-medium">Personalized Contest</span>
+            <span className="material-symbols-outlined transition-transform group-hover:scale-110">emoji_events</span>
+            <span>Personalized Contest</span>
           </button>
-          <a className="flex items-center gap-3 rounded-lg bg-primary/10 px-3 py-2 text-primary" href="#">
-            <span className="material-symbols-outlined">calendar_month</span>
-            <span className="font-medium">Upcoming Contest</span>
-          </a>
+          <div className="flex items-center gap-2.5 rounded-xl border-l-4 border-primary bg-primary/10 px-3 py-2 text-[12px] font-medium text-white">
+            <span className="material-symbols-outlined filled-icon text-primary">calendar_month</span>
+            <span>Upcoming Contests</span>
+          </div>
         </nav>
-
+        <div className="mt-auto space-y-1 border-t border-white/5 pt-4">
+          <div className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-[12px] font-medium text-slate-500">
+            <span className="material-symbols-outlined">settings</span>
+            <span>Settings</span>
+          </div>
+          <div className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-[12px] font-medium text-slate-500">
+            <span className="material-symbols-outlined">logout</span>
+            <span>Logout</span>
+          </div>
+        </div>
       </aside>
 
-      <header className="p-4 pt-6 flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Upcoming Contests</h1>
-          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
-            Stay updated with future CP rounds
-            {lastUpdated ? <span className="ml-2 text-xs text-slate-400">Updated {formatLocalDateTime(lastUpdated)}</span> : null}
-          </p>
+      <header className="sticky top-0 z-30 flex h-12 items-center justify-between bg-[#f4f6fb]/90 px-4 backdrop-blur md:px-6">
+        <div className="flex items-center gap-8">
+          <nav className="hidden items-center gap-5 md:flex">
+            <span className="cursor-default border-b-2 border-transparent pb-1 text-[11px] font-bold text-slate-500">Practice</span>
+            <span className="cursor-default border-b-2 border-primary pb-1 text-[11px] font-bold text-primary">Compete</span>
+            <span className="cursor-default border-b-2 border-transparent pb-1 text-[11px] font-bold text-slate-500">Discuss</span>
+          </nav>
         </div>
-        <button
-          className="p-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-60"
-          onClick={loadUpcomingContests}
-          type="button"
-          disabled={loading}
-        >
-          <span className="material-symbols-outlined">sync</span>
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            className="rounded-full p-2 text-slate-500 transition-colors hover:bg-white hover:text-primary disabled:opacity-60"
+            onClick={loadUpcomingContests}
+            type="button"
+            disabled={loading}
+            title="Refresh contests"
+          >
+            <span className="material-symbols-outlined">{loading ? "progress_activity" : "notifications"}</span>
+          </button>
+          <div className="rounded-full p-2 text-slate-500">
+            <span className="material-symbols-outlined">help_outline</span>
+          </div>
+          <div className="flex h-6 w-6 items-center justify-center rounded-full border border-slate-300 bg-slate-800 text-[9px] font-bold uppercase text-white">
+            {String(authUser?.username || authUser?.email || authUser?.codeforces_id || "CP").slice(0, 2)}
+          </div>
+        </div>
       </header>
 
-      <section className="px-4 mb-6">
-        <div className="bg-white dark:bg-[#161b22] rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-800">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-base">{monthLabel}</h2>
-            <div className="flex gap-2">
-              <button
-                className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded"
-                onClick={() =>
-                  setCalendarMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))
-                }
-                type="button"
-              >
-                <span className="material-symbols-outlined text-lg">chevron_left</span>
-              </button>
-              <button
-                className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded"
-                onClick={() =>
-                  setCalendarMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))
-                }
-                type="button"
-              >
-                <span className="material-symbols-outlined text-lg">chevron_right</span>
-              </button>
+      <main className="mx-auto max-w-5xl px-4 py-5 md:px-6">
+        <div className="mb-5 flex items-end justify-between gap-4">
+          <div>
+            <h1 className="font-display text-2xl font-extrabold tracking-tight text-slate-950">Upcoming Contests</h1>
+            <p className="mt-1 text-[11px] text-slate-500">
+              Explore and track your next competitive challenges.
+              {lastUpdated ? <span className="ml-2 text-xs text-slate-400">Updated {formatLocalDateTime(lastUpdated)}</span> : null}
+            </p>
+          </div>
+        </div>
+
+        <section className="space-y-6">
+          <div className="rounded-[22px] bg-white/75 p-3.5 shadow-[0_14px_40px_rgba(148,163,184,0.15)] ring-1 ring-white/70 backdrop-blur sm:p-4 lg:p-5">
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <h2 className="font-display text-xl font-bold text-slate-900">{monthLabel}</h2>
+                <p className="mt-1 text-[11px] text-slate-500">{monthContestCount} contests scheduled this month</p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
+                  onClick={() => setCalendarMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))}
+                  type="button"
+                  aria-label="Previous month"
+                >
+                  <span className="material-symbols-outlined text-lg">chevron_left</span>
+                </button>
+                <button
+                  className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
+                  onClick={() => setCalendarMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))}
+                  type="button"
+                  aria-label="Next month"
+                >
+                  <span className="material-symbols-outlined text-lg">chevron_right</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-7 gap-x-1.5 gap-y-2.5 text-center sm:gap-x-2.5 sm:gap-y-3">
+              {weekdayLabels.map((label) => (
+                <div className="pb-1 text-[9px] font-bold uppercase tracking-[0.14em] text-slate-400" key={label}>
+                  {label}
+                </div>
+              ))}
+              {calendarDays.map((day) => {
+                const isSelected = selectedDateKey === day.key;
+                return (
+                  <button
+                    key={day.key}
+                    className={[
+                      "relative flex h-10 items-center justify-center rounded-xl text-[11px] font-bold transition-all sm:h-11",
+                      day.inMonth ? "text-slate-900" : "text-slate-300",
+                      !isSelected && day.inMonth ? "hover:bg-primary/10" : "",
+                      isSelected ? "bg-gradient-to-br from-primary to-accent-purple text-white shadow-[0_22px_40px_rgba(57,44,193,0.35)] scale-[1.03]" : "",
+                      day.isToday && !isSelected ? "border border-primary/20 bg-primary/5 text-primary" : "",
+                    ].join(" ")}
+                    onClick={() => setSelectedDateKey(day.key)}
+                    type="button"
+                  >
+                    {day.date.getDate()}
+                    {day.hasContest ? (
+                      <span
+                        className={`absolute bottom-3 h-1.5 w-1.5 rounded-full ${
+                          isSelected ? "bg-cyan-300 shadow-[0_0_14px_rgba(125,211,252,0.9)]" : "bg-cyan-400"
+                        }`}
+                      ></span>
+                    ) : null}
+                    {isSelected ? (
+                      <span className="absolute -right-1 top-2 h-3 w-3 rounded-full bg-cyan-300 shadow-[0_0_16px_rgba(125,211,252,0.9)]"></span>
+                    ) : null}
+                  </button>
+                );
+              })}
             </div>
           </div>
-          <div className="grid grid-cols-7 gap-y-2 text-center text-xs font-medium text-slate-400 mb-2">
-            <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
-          </div>
-          <div className="grid grid-cols-7 gap-y-1 text-center">
-            {calendarDays.map((day) => (
+
+          <div className="flex flex-wrap gap-3">
+            {platformChips.map((chip) => (
               <button
-                key={day.key}
-                className={[
-                  "relative h-9 flex items-center justify-center text-sm transition-colors",
-                  day.inMonth ? "text-slate-900 dark:text-slate-100" : "text-slate-300 dark:text-slate-700",
-                  day.isToday ? "bg-primary/20 rounded-lg text-primary font-bold border border-primary/30" : "",
-                  selectedDateKey === day.key ? "ring-2 ring-primary/50 rounded-lg" : "",
-                ].join(" ")}
-                onClick={() => setSelectedDateKey(day.key)}
+                className={`rounded-full px-3.5 py-1 text-[11px] font-bold transition-colors ${
+                  selectedPlatform === chip.key
+                    ? "bg-primary text-white shadow-[0_10px_24px_rgba(57,44,193,0.25)]"
+                    : "bg-white/80 text-slate-600 hover:bg-primary/10 hover:text-primary"
+                }`}
+                key={chip.key}
+                onClick={() => setSelectedPlatform(chip.key)}
                 type="button"
               >
-                {day.date.getDate()}
-                {day.hasContest ? (
-                  <span className="absolute bottom-1 w-1 h-1 bg-primary rounded-full active-dot"></span>
-                ) : null}
+                {chip.label}
               </button>
             ))}
           </div>
-        </div>
-      </section>
 
-      <main className="flex-1 px-4 pb-24 overflow-y-auto custom-scrollbar">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold">Upcoming List</h2>
-          <span className="text-xs bg-slate-200 dark:bg-slate-800 px-2 py-1 rounded-full text-slate-500 font-medium">
-            {listLabel}
-          </span>
-        </div>
-        {selectedDateKey ? (
-          <button
-            className="mb-3 text-xs font-semibold text-primary hover:underline"
-            onClick={() => setSelectedDateKey("")}
-            type="button"
-          >
-            Clear date filter
-          </button>
-        ) : null}
-        {error ? (
-          <div className="bg-white dark:bg-[#161b22] border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-sm text-red-400">
-            {error}
-          </div>
-        ) : null}
-        {loading && contests.length === 0 ? (
-          <div className="bg-white dark:bg-[#161b22] border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-sm text-slate-500">
-            Loading upcoming contests...
-          </div>
-        ) : null}
-        {!loading && contests.length === 0 && !error ? (
-          <div className="bg-white dark:bg-[#161b22] border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-sm text-slate-500">
-            No upcoming contests found for Codeforces or LeetCode.
-          </div>
-        ) : null}
-        {!loading && contests.length > 0 && filteredContests.length === 0 && selectedDateKey ? (
-          <div className="bg-white dark:bg-[#161b22] border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-sm text-slate-500">
-            No contests found on {selectedDateKey}.
-          </div>
-        ) : null}
-        <div className="space-y-4">
-          {filteredContests.map((contest) => {
-            const style = platformStyles[contest.platform] || platformStyles.Codeforces;
-            const contestLink = contest.register_url || contest.registration_url || contest.url || "#";
-            return (
-              <div
-                className="bg-white dark:bg-[#161b22] border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm"
-                key={`${contest.platform}-${contest.id || contest.title}-${contest.start_time}`}
-              >
-                <div className="p-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className={`text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded ${style.badge}`}>
-                        {contest.platform}
-                      </span>
-                      {contest.phase ? <span className="text-xs text-slate-500">{contest.phase}</span> : null}
-                    </div>
-                    <div className="text-right">
-                      <p className={`text-xs font-bold ${style.accent}`}>{formatTimeUntil(contest.start_time)}</p>
-                    </div>
-                  </div>
-                  <h3 className="text-lg font-bold leading-tight mb-3">{contest.title}</h3>
-                  <div className="grid grid-cols-2 gap-4 text-slate-500 text-sm mb-4">
-                    <div className="flex items-center gap-2">
-                      <span className="material-symbols-outlined text-base">calendar_today</span>
-                      <span>{formatLocalDateTime(contest.start_time)}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="material-symbols-outlined text-base">schedule</span>
-                      <span>{formatDuration(contest.duration_seconds)}</span>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <a
-                      className="flex-1 bg-gradient-to-r from-primary to-accent-purple text-white py-2.5 rounded-lg font-bold text-sm shadow-lg shadow-primary/20 active:scale-95 transition-transform text-center"
-                      href={contestLink}
-                      rel="noreferrer"
-                      target={contestLink && contestLink !== "#" ? "_blank" : undefined}
-                    >
-                      View
-                    </a>
-                    <a
-                      className="px-3 py-2.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 flex items-center justify-center"
-                      href={contestLink}
-                      rel="noreferrer"
-                      target={contestLink && contestLink !== "#" ? "_blank" : undefined}
-                      aria-label="Open contest register page"
-                    >
-                      <span className="material-symbols-outlined text-xl">calendar_add_on</span>
-                    </a>
-                  </div>
-                </div>
+          <section className="space-y-4 pb-16">
+            <div className="flex items-center justify-between border-b border-slate-200/70 pb-4">
+              <h3 className="font-display text-lg font-bold text-slate-900">Selected: {selectedDateLabel}</h3>
+              <div className="rounded-full bg-accent-purple px-2.5 py-1 text-[9px] font-bold text-white shadow-[0_8px_20px_rgba(124,58,237,0.25)]">
+                {visibleContestCountLabel}
               </div>
-            );
-          })}
-        </div>
+            </div>
+
+            {selectedDateKey ? (
+              <button
+                className="text-sm font-semibold text-primary hover:underline"
+                onClick={() => setSelectedDateKey("")}
+                type="button"
+              >
+                Clear date filter
+              </button>
+            ) : null}
+
+            {error ? (
+              <div className="rounded-[24px] border border-red-200 bg-white/90 p-5 text-sm text-red-500 shadow-sm">
+                {error}
+              </div>
+            ) : null}
+            {loading && contests.length === 0 ? (
+              <div className="rounded-[24px] border border-slate-200 bg-white/90 p-5 text-sm text-slate-500 shadow-sm">
+                Loading upcoming contests...
+              </div>
+            ) : null}
+            {!loading && platformFilteredContests.length === 0 && !error ? (
+              <div className="rounded-[24px] border border-slate-200 bg-white/90 p-6 text-center text-sm text-slate-500 shadow-sm">
+                No upcoming contests found for this platform filter.
+              </div>
+            ) : null}
+            {!loading && platformFilteredContests.length > 0 && filteredContests.length === 0 ? (
+              <div className="rounded-[28px] border-2 border-dashed border-slate-300 bg-white/60 p-8 text-center shadow-sm">
+                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+                  <span className="material-symbols-outlined text-2xl">event_busy</span>
+                </div>
+                <p className="font-display text-lg font-bold text-slate-900">No contests on {selectedDateLabel}</p>
+                <p className="mx-auto mt-1 max-w-md text-sm text-slate-500">
+                  It&apos;s a perfect day for focused practice. Pick a problem from your personal practice sheet to keep the streak alive!
+                </p>
+                <button
+                  className="mt-4 text-sm font-bold text-primary hover:underline"
+                  onClick={onOpenPersonalizedSheet}
+                  type="button"
+                >
+                  View Sheet
+                </button>
+              </div>
+            ) : null}
+
+            {filteredContests.length > 0 ? (
+              <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+                {filteredContests.map(renderContestCard)}
+              </div>
+            ) : null}
+          </section>
+        </section>
       </main>
+
+      <button
+        className="fixed bottom-5 right-5 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-tr from-primary to-accent-purple text-white shadow-[0_18px_40px_rgba(57,44,193,0.35)] transition-transform hover:scale-105 active:scale-95 md:right-7"
+        onClick={loadUpcomingContests}
+        type="button"
+        title="Refresh contests"
+      >
+        <span className="material-symbols-outlined text-2xl">{loading ? "progress_activity" : "add"}</span>
+      </button>
     </div>
   );
 }
