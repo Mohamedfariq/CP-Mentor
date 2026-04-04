@@ -1,0 +1,10 @@
+{
+  "dynamic_users_seen": 1,
+  "feature_columns": 47,
+  "last_cluster_count": 12,
+  "last_retrain_at": 1772693127,
+  "last_retrain_reason": "snapshot_signup",
+  "last_retrain_total_samples": 2990,
+  "last_retrain_user_count": 2990,
+  "retrain_runs": 1
+}
