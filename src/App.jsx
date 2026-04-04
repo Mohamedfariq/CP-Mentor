@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ContestScheduleManager } from "./ContestScheduleManager";
+import { apiFetch } from "./api";
 
 const topicAccuracy = [
   { topic: "Dynamic Programming", value: 85 },
@@ -562,7 +563,7 @@ function ProblemEditorModal({ open, problem, onClose }) {
 
     const loadDetails = async () => {
       try {
-        const response = await fetch("/api/problem/details", {
+        const response = await apiFetch("/api/problem/details", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           signal: controller.signal,
@@ -667,7 +668,7 @@ function ProblemEditorModal({ open, problem, onClose }) {
     setTestResults(null);
 
     try {
-      const response = await fetch("/api/execute-code", {
+      const response = await apiFetch("/api/execute-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -934,7 +935,7 @@ function SignUpPage({ onGoToLogin, onAuthSuccess }) {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("/api/signup", {
+      const response = await apiFetch("/api/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, email, password, codeforcesId }),
@@ -1116,7 +1117,7 @@ function LoginPage({ onGoToSignup, onAuthSuccess }) {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("/api/login", {
+      const response = await apiFetch("/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -1283,7 +1284,7 @@ function DashboardPage({
       setDashboardError("");
     }
     try {
-      const response = await fetch("/api/dashboard", {
+      const response = await apiFetch("/api/dashboard", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ codeforcesId }),
@@ -1360,7 +1361,7 @@ function DashboardPage({
     if (!url) return;
     setSubmissionModal({ open: true, loading: true, error: "", payload: null });
     try {
-      const response = await fetch("/api/submission/source", {
+      const response = await apiFetch("/api/submission/source", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ submissionUrl: url }),
@@ -1750,7 +1751,7 @@ function PersonalizedSheetPage({
 
   const fetchAvailableTopics = useCallback(async () => {
     try {
-      const response = await fetch("/api/topics");
+      const response = await apiFetch("/api/topics");
       const contentType = response.headers.get("content-type") || "";
       const data = contentType.includes("application/json") ? await response.json() : null;
       if (!response.ok) return;
@@ -1775,7 +1776,7 @@ function PersonalizedSheetPage({
     }
     setPreferenceError("");
     try {
-      const response = await fetch("/api/recommendations/weak-topics", {
+      const response = await apiFetch("/api/recommendations/weak-topics", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -1858,7 +1859,7 @@ function PersonalizedSheetPage({
     setSavingTopics(true);
     setPreferenceError("");
     try {
-      const response = await fetch("/api/user/preferences/topics", {
+      const response = await apiFetch("/api/user/preferences/topics", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ codeforcesId, topics: topicsToApply }),
@@ -2413,7 +2414,7 @@ function PersonalizedContestPage({ onGoDashboard, onOpenPersonalizedSheet, onOpe
     setScheduleLoading(true);
     setScheduleError("");
     try {
-      const response = await fetch("/api/contest/weekly/schedule/get", {
+      const response = await apiFetch("/api/contest/weekly/schedule/get", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ codeforcesId }),
@@ -2461,7 +2462,7 @@ function PersonalizedContestPage({ onGoDashboard, onOpenPersonalizedSheet, onOpe
     setScheduleSaving(true);
     setScheduleError("");
     try {
-      const response = await fetch("/api/contest/weekly/schedule/set", {
+      const response = await apiFetch("/api/contest/weekly/schedule/set", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -2509,7 +2510,7 @@ function PersonalizedContestPage({ onGoDashboard, onOpenPersonalizedSheet, onOpe
     setContestLoading(true);
     setContestError("");
     try {
-      const response = await fetch("/api/contest/generate", {
+      const response = await apiFetch("/api/contest/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -2562,7 +2563,7 @@ function PersonalizedContestPage({ onGoDashboard, onOpenPersonalizedSheet, onOpe
 
     setRefreshLoading(true);
     try {
-      const response = await fetch("/api/contest/status", {
+      const response = await apiFetch("/api/contest/status", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -2593,7 +2594,7 @@ function PersonalizedContestPage({ onGoDashboard, onOpenPersonalizedSheet, onOpe
     if (!codeforcesId || contestProblems.length === 0) return;
     setCompleteSaving(true);
     try {
-      const response = await fetch("/api/contest/complete", {
+      const response = await apiFetch("/api/contest/complete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -3083,7 +3084,7 @@ function UpcomingContestsPage({ onGoDashboard, onOpenPersonalizedSheet, onOpenPe
     setLoading(true);
     setError("");
     try {
-      const response = await fetch("/api/contests/upcoming");
+      const response = await apiFetch("/api/contests/upcoming");
       const contentType = response.headers.get("content-type") || "";
       const data = contentType.includes("application/json") ? await response.json() : null;
       if (!response.ok) {

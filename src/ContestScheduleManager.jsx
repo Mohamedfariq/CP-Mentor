@@ -4,6 +4,7 @@
  */
 
 import { useState, useCallback, useEffect } from "react";
+import { apiFetch } from "./api";
 
 export function ContestScheduleManager({ open, authUser, onClose }) {
   const [contests, setContests] = useState([]);
@@ -34,7 +35,7 @@ export function ContestScheduleManager({ open, authUser, onClose }) {
     setLoading(true);
     setError("");
     try {
-      const response = await fetch("/api/contests/list", {
+      const response = await apiFetch("/api/contests/list", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ codeforcesId: authUser.codeforces_id }),
@@ -71,7 +72,7 @@ export function ContestScheduleManager({ open, authUser, onClose }) {
 
     setLoading(true);
     try {
-      const response = await fetch("/api/contests/create", {
+      const response = await apiFetch("/api/contests/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -97,7 +98,7 @@ export function ContestScheduleManager({ open, authUser, onClose }) {
   const handleDeleteContest = async (contestId) => {
     setLoading(true);
     try {
-      const response = await fetch("/api/contests/delete", {
+      const response = await apiFetch("/api/contests/delete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -120,7 +121,7 @@ export function ContestScheduleManager({ open, authUser, onClose }) {
     setLoading(true);
     setError("");
     try {
-      const response = await fetch("/api/contests/start", {
+      const response = await apiFetch("/api/contests/start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
