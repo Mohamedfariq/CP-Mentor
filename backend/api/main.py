@@ -66,7 +66,7 @@ INVALID_CREDENTIALS_MSG = "Invalid credentials. Please check email and password.
 DEFAULT_ALLOWED_ORIGINS = [
     "http://127.0.0.1:5173",
     "http://localhost:5173",
-    "https://cpfrontend-26zg97uj9-mohamedfariq2326-7184s-projects.vercel.app",  # Your Vercel frontend
+    "https://cp-mentor-frontend.vercel.app",
 ]
 SHEET_CACHE_VERSION = "v3"
 
