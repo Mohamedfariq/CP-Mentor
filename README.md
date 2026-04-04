@@ -1,77 +1,64 @@
 # CP Mentor
 
-CP Mentor is a full-stack app with:
-- Frontend: React + Vite (`src/`)
-- Backend: FastAPI (`api/main.py`)
-- Data: local CSV-based feature datasets (`cf_dataset_ml/`)
-- DB: MongoDB for user auth and cached recommendation sheets
+CP Mentor is split into two app roots:
 
-## ⚡ Quick Start
+- `frontend/`: React + Vite client
+- `backend/`: FastAPI API, datasets, and Python runtime files
 
-**New to the project? See [SETUP_GUIDE.md](./SETUP_GUIDE.md) for detailed step-by-step instructions including:**
-- How to fix "code view not working" issues
-- How to resolve PyMongo fallback errors
-- Complete environment configuration
+## Local Development
 
-## Prerequisites (macOS)
-- Python 3.11+
-- Node.js 18+
-- npm
-- MongoDB running locally or a MongoDB Atlas URI
-
-## 1) Backend setup
-```bash
-cd /Users/mohamedasifa/Desktop/CP-Mentor
-python3 -m venv .venv
-source .venv/bin/activate
-python3 -m pip install --upgrade pip
-python3 -m pip install -r requirements.txt
-cp .env.example .env
-python3 -m uvicorn api.main:app --reload --host 127.0.0.1 --port 5000
+Backend:
+```powershell
+cd backend
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+Copy-Item .env.example .env
+python -m uvicorn api.main:app --reload --host 127.0.0.1 --port 5000
 ```
 
-## 2) Frontend setup
-```bash
-cd /Users/mohamedasifa/Desktop/CP-Mentor
+Frontend:
+```powershell
+cd frontend
 npm install
-npm run dev -- --host 127.0.0.1 --port 5173
+Copy-Item .env.example .env
+npm run dev
 ```
 
-## 3) Open the app
+Open:
+
 - Frontend: `http://127.0.0.1:5173`
 - Backend health: `http://127.0.0.1:5000/api/health`
 
-## Environment variables
-Use `.env` (copy from `.env.example`):
+## Vercel Deployment
+
+Create two separate Vercel projects from the same repo.
+
+Backend project:
+
+- Root Directory: `backend`
+- Framework Preset: `Other`
+- Build Command: leave empty
+- Output Directory: leave empty
+
+Backend env vars:
+
 - `MONGO_URI`
 - `MONGO_DB_NAME`
 - `MONGO_COLLECTION_NAME`
 - `ALLOW_ORIGINS`
-- `MIN_PASSWORD_LENGTH`
-- `CF_API_CACHE_TTL_SECONDS`
-- `CF_STATUS_CACHE_TTL_SECONDS`
-- `WEEKLY_CONTEST_DURATION_SECONDS`
-- `CODEFORCES_COOKIE` (optional; needed when Codeforces requires auth to view submission source)
-- `MONGO_TRAINING_SNAPSHOTS_COLLECTION`
-- `MONGO_MODEL_META_COLLECTION`
-- `CLUSTER_MODEL_STRICT`
-- `CLUSTER_RETRAIN_ENABLED`
-- `CLUSTER_RETRAIN_EVERY_N_USERS`
-- `CLUSTER_RETRAIN_MIN_INTERVAL_SECONDS`
-- `CLUSTER_RETRAIN_MIN_TOTAL_USERS`
-- `CLUSTER_RETRAIN_MAX_CLUSTERS`
-- `ALLOW_CLUSTER_CENTROID_FALLBACK` (keep `false` to force saved-artifact predictions only)
+- `CODEFORCES_COOKIE` if needed
 
-## Notes
-- Cluster prediction uses trained artifacts (`scaler_v2.pkl`, `kmeans_v2.pkl`) in strict mode.
-- Dynamic user snapshots and retrain metadata are stored in MongoDB and the model is retrained automatically when thresholds are met.
-- Retraining dynamically adjusts cluster count as the active user base grows.
-- `/api/recommendations/weak-topics` response caching is keyed by user + selected topics + problem-count parameters.
-- Personalized sheet recommendations are returned in weak-topic order with up to 5 problems per topic and topic-level recommendation progress.
-- Weekly contest generation uses the top 4 weak topics and picks non-attempted problems from the 6-10 rank band per topic (randomized).
-- Contest problem generation is backend-gated by saved weekly schedule (`POST /api/contest/generate`) and cannot run outside that slot.
-- Contest duration is user-configurable to 1h/2h/3h via weekly schedule preferences.
-- Dashboard submission "View" can fetch and render source code in-app (`POST /api/submission/source`) when Codeforces exposes it.
-- Codeforces browser login is not shared with backend requests. For auth-gated submission pages, set `CODEFORCES_COOKIE` in `.env`.
-  Example: `CODEFORCES_COOKIE=JSESSIONID=...; 39ce7=...`
-- If MongoDB is down, the backend automatically switches to in-memory fallback so auth/preferences still work during local development.
+Frontend project:
+
+- Root Directory: `frontend`
+- Framework Preset: `Vite`
+- Build Command: `npm run build`
+- Output Directory: `dist`
+
+Frontend env vars:
+
+- `VITE_API_BASE_URL=https://your-backend.vercel.app`
+
+Use [backend/.env.example](./backend/.env.example) and [frontend/.env.example](./frontend/.env.example) as templates.
