@@ -1345,6 +1345,65 @@ def _normalize_problem_url(cf_link: str):
     return f"https://codeforces.com{path}"
 
 
+def _problem_detail_candidate_urls(problem_url: str) -> list[tuple[str, str]]:
+    normalized = _normalize_problem_url(problem_url)
+    parsed = urlparse(normalized)
+    path = (parsed.path or "").rstrip("/")
+    candidates: list[tuple[str, str]] = [(normalized, "https://codeforces.com/problemset")]
+    seen = {normalized}
+
+    contest_match = CODEFORCES_CONTEST_PROBLEM_PATH_RE.match(path)
+    problemset_match = CODEFORCES_PROBLEMSET_PROBLEM_PATH_RE.match(path)
+
+    if contest_match:
+        contest_id = contest_match.group("contest_id")
+        problem_index = contest_match.group("problem_index")
+        fallback = f"https://codeforces.com/problemset/problem/{contest_id}/{problem_index}"
+        if fallback not in seen:
+            candidates.append((fallback, "https://codeforces.com/problemset"))
+            seen.add(fallback)
+
+    if problemset_match:
+        contest_id = problemset_match.group("contest_id")
+        problem_index = problemset_match.group("problem_index")
+        fallback = f"https://codeforces.com/contest/{contest_id}/problem/{problem_index}"
+        if fallback not in seen:
+            candidates.append((fallback, "https://codeforces.com/"))
+            seen.add(fallback)
+
+    mirror_candidates = []
+    for candidate_url, referer in candidates:
+        mirror_url = candidate_url.replace("https://codeforces.com/", "https://mirror.codeforces.com/")
+        if mirror_url not in seen:
+            mirror_referer = referer.replace("https://codeforces.com", "https://mirror.codeforces.com")
+            mirror_candidates.append((mirror_url, mirror_referer))
+            seen.add(mirror_url)
+
+    candidates.extend(mirror_candidates)
+    return candidates
+
+
+def _problem_details_fetch_unavailable(problem_url: str, warning: str | None = None):
+    message = (
+        warning
+        or "Problem statement preview is temporarily unavailable because Codeforces could not be reached."
+    )
+    return {
+        "source_url": problem_url,
+        "submit_url": _derive_problem_submit_url(problem_url),
+        "title": "",
+        "time_limit": "",
+        "memory_limit": "",
+        "statement": message,
+        "input_specification": "",
+        "output_specification": "",
+        "constraints": [],
+        "samples": [],
+        "note": "",
+        "fetch_warning": message,
+    }
+
+
 def _normalize_submission_url(submission_url: str):
     value = str(submission_url or "").strip()
     if not value:
@@ -3649,18 +3708,34 @@ def problem_details(payload: ProblemDetailsPayload):
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 
-    try:
-        page_html = _fetch_codeforces_page_html(
-            problem_url,
-            referer="https://codeforces.com/problemset",
-            timeout=20,
-        )
-    except Exception as exc:
-        logger.exception("Failed to fetch problem page: %s", problem_url)
-        detail = "Failed to fetch problem page from Codeforces"
-        if isinstance(exc, HTTPError):
-            detail = f"Failed to fetch problem page from Codeforces (HTTP {exc.code})"
-        raise HTTPException(status_code=502, detail=detail)
+    candidate_urls = _problem_detail_candidate_urls(problem_url)
+    page_html = ""
+    resolved_problem_url = candidate_urls[0][0]
+    last_fetch_exc = None
+
+    for candidate_url, referer in candidate_urls:
+        try:
+            page_html = _fetch_codeforces_page_html(
+                candidate_url,
+                referer=referer,
+                timeout=20,
+            )
+            resolved_problem_url = candidate_url
+            last_fetch_exc = None
+            break
+        except Exception as exc:
+            last_fetch_exc = exc
+            logger.warning("Problem page fetch failed for %s: %s", candidate_url, exc)
+
+    if not page_html:
+        logger.exception("Failed to fetch problem page after fallbacks: %s", problem_url, exc_info=last_fetch_exc)
+        warning = "Problem statement preview is temporarily unavailable because Codeforces returned an upstream error."
+        if isinstance(last_fetch_exc, HTTPError):
+            warning = (
+                "Problem statement preview is temporarily unavailable because Codeforces "
+                f"returned HTTP {last_fetch_exc.code}."
+            )
+        return _problem_details_fetch_unavailable(problem_url, warning=warning)
 
     if BeautifulSoup is None:
         title_match = re.search(r'<div[^>]*class="title"[^>]*>(.*?)</div>', page_html, flags=re.DOTALL | re.IGNORECASE)
@@ -3679,7 +3754,7 @@ def problem_details(payload: ProblemDetailsPayload):
             return html.unescape(re.sub(r"<[^>]+>", "", str(value or ""))).strip()
 
         return {
-            "source_url": problem_url,
+            "source_url": resolved_problem_url,
             "submit_url": _derive_problem_submit_url(problem_url),
             "title": _strip_html(title_match.group(1)) if title_match else "",
             "time_limit": _strip_html(time_match.group(1)) if time_match else "",
@@ -3698,7 +3773,11 @@ def problem_details(payload: ProblemDetailsPayload):
     soup = BeautifulSoup(page_html, "html.parser")
     problem_root = soup.select_one("div.problem-statement")
     if problem_root is None:
-        raise HTTPException(status_code=404, detail="Unable to parse problem statement from Codeforces page")
+        logger.warning("Unable to parse Codeforces problem statement for %s", resolved_problem_url)
+        return _problem_details_fetch_unavailable(
+            problem_url,
+            warning="Problem statement preview is temporarily unavailable because the Codeforces page format could not be parsed.",
+        )
 
     header = problem_root.select_one("div.header")
     title = _extract_block_text(header.select_one("div.title") if header else None)
@@ -3767,7 +3846,7 @@ def problem_details(payload: ProblemDetailsPayload):
     submit_url = _derive_problem_submit_url(problem_url)
 
     return {
-        "source_url": problem_url,
+        "source_url": resolved_problem_url,
         "submit_url": submit_url,
         "title": title,
         "time_limit": time_limit,
